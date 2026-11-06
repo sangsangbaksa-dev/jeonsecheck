@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>전세 보증금 안전 점검 · jeonsecheck</title>
+  <meta name="description" content="전세·반전세 보증금을 위험비율, 점검표, 날짜 알림으로 계약 전에 점검하세요. 데이터는 이 브라우저에만 저장됩니다.">
+  <meta name="theme-color" content="#0F766E" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0B1220" media="(prefers-color-scheme: dark)">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ko_KR">
+  <meta property="og:title" content="전세 보증금 안전 점검 · jeonsecheck">
+  <meta property="og:description" content="깡통전세를 막기 위한 위험비율, 계약 단계별 점검표, 계약갱신·반환 날짜 알림.">
+  <meta property="og:site_name" content="jeonsecheck">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230F766E'/%3E%3Cpath d='M16 33l10 10 22-25' stroke='%23fff' stroke-width='6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#app">본문으로 건너뛰기</a>
+
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="#top" aria-label="jeonsecheck 홈">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="currentColor"/><path d="M8 17l6 6 10-12" stroke="var(--accent-contrast)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="brand-text"><strong>jeonsecheck</strong><small>전세 보증금 안전 점검</small></span>
+      </a>
+      <a class="btn btn-primary btn-sm" href="#app">내 물건 점검하기</a>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">깡통전세 예방 체크리스트</p>
+          <h1>전세 보증금, 계약 전에 숫자로 점검하세요</h1>
+          <p class="lead">등기부 숫자로 위험비율을 계산하고, 계약 단계별 점검표와 계약갱신·반환 날짜를 한곳에서 관리합니다. 데이터는 이 브라우저에만 저장됩니다.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#app">지금 점검 시작</a>
+            <a class="btn btn-ghost" href="#how">작동 방식 보기</a>
+          </div>
+          <p class="fine">보장된 안전을 알려주지 않습니다. 참고용 추정치이며 법률·세무·재무 자문이 아닙니다.</p>
+        </div>
+        <figure class="hero-card" aria-label="예시 화면">
+          <p class="hero-card-tag">예시 화면 (실제 계산 아님)</p>
+          <p class="hero-card-title">서초 빌라 A · 전세</p>
+          <p class="hero-score"><span>78.7%</span> <span class="badge tone-caution">주의</span></p>
+          <div class="meter meter-sample" aria-hidden="true"><span style="width:78.7%"></span></div>
+          <ul class="sample-list">
+            <li><span>선순위 근저당</span><span>1억 2,000만원</span></li>
+            <li><span>선순위 임차보증금</span><span>0원</span></li>
+            <li><span>내 보증금</span><span>2억 5,000만원</span></li>
+          </ul>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="features-title">
+      <div class="wrap">
+        <h2 id="features-title" class="section-title">계약 전에 놓치기 쉬운 것들을 모았습니다</h2>
+        <div class="card-grid">
+          <article class="card">
+            <h3>위험비율과 등급</h3>
+            <p>선순위 채권과 내 보증금을 합쳐 예상 시세와 비교합니다. 시세가 10%, 20% 떨어졌을 때도 함께 봅니다.</p>
+          </article>
+          <article class="card">
+            <h3>경매 시 노출 금액</h3>
+            <p>낙찰가율을 가정해 배당받지 못할 수 있는 보증금 규모를 보여 줍니다. 가정값은 직접 바꿀 수 있습니다.</p>
+          </article>
+          <article class="card">
+            <h3>단계별 점검표</h3>
+            <p>계약 전, 계약 시, 잔금·입주, 거주 중, 퇴거까지. 체크 상태는 물건마다 기억합니다.</p>
+          </article>
+          <article class="card">
+            <h3>날짜 알림 파일</h3>
+            <p>계약갱신요구 기간과 반환 시점을 계산해 캘린더 파일(.ics)로 내려받을 수 있습니다.</p>
+          </article>
+          <article class="card">
+            <h3>특약 문구 참고 예시</h3>
+            <p>권리변동 금지, 체납 확인 같은 문구를 복사해서 쓸 수 있습니다. 참고 예시이며 법률 자문이 아닙니다.</p>
+          </article>
+          <article class="card">
+            <h3>비교와 백업</h3>
+            <p>최대 5개 물건을 나란히 비교하고, JSON 백업과 CSV 내보내기로 자료를 옮길 수 있습니다.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="how" aria-labelledby="how-title">
+      <div class="wrap">
+        <h2 id="how-title" class="section-title">작동 방식은 세 단계입니다</h2>
+        <ol class="steps">
+          <li class="step">
+            <span class="step-num" aria-hidden="true">1</span>
+            <h3>등기·시세 숫자 입력</h3>
+            <p>예상 매매 시세, 내 보증금, 등기부의 선순위 근저당 채권최고액을 적습니다. 값이 없으면 0을 적으세요.</p>
+          </li>
+          <li class="step">
+            <span class="step-num" aria-hidden="true">2</span>
+            <h3>위험비율 확인</h3>
+            <p>등급, 하락 시나리오, 경매 노출액을 보고 계약 조건을 다시 협상할지 판단하는 자료로 씁니다.</p>
+          </li>
+          <li class="step">
+            <span class="step-num" aria-hidden="true">3</span>
+            <h3>점검표와 일정 관리</h3>
+            <p>체크리스트를 하나씩 끝내고, 계약갱신·반환 날짜를 캘린더에 넣어 놓칩니다.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section app-section" id="app" aria-labelledby="app-title">
+      <div class="wrap">
+        <div class="app-head">
+          <div>
+            <h2 id="app-title" class="section-title">내 물건</h2>
+            <p class="muted">물건을 추가하고 선택하면 분석과 점검표가 열립니다.</p>
+          </div>
+          <button type="button" class="btn btn-primary" id="new-btn">+ 새 물건</button>
+        </div>
+
+        <div class="app-grid">
+          <aside class="list-col" aria-label="물건 목록">
+            <div id="property-list" class="property-list"></div>
+            <p id="list-empty" class="empty" hidden>아직 물건이 없어요. "새 물건"으로 첫 번째 전세 계약을 입력해 보세요.</p>
+          </aside>
+
+          <div class="main-col">
+            <!-- 물건 입력 폼 -->
+            <section id="editor" class="panel" aria-labelledby="editor-title" hidden>
+              <h3 id="editor-title" class="panel-title">물건 정보</h3>
+              <form id="property-form" novalidate class="form-grid">
+                <div class="field">
+                  <label for="f-name">물건 이름 <span class="req">필수</span></label>
+                  <input id="f-name" name="name" type="text" maxlength="60" autocomplete="off" placeholder="예: 서초 빌라 A">
+                  <p class="error" id="err-name" aria-live="polite"></p>
+                </div>
+                <div class="field">
+                  <label for="f-address">주소 메모 <span class="opt">선택 · AI로 전송되지 않음</span></label>
+                  <input id="f-address" name="address" type="text" maxlength="140" autocomplete="off" placeholder="예: 서초구 ○○동 (메모용)">
+                  <p class="error" id="err-address" aria-live="polite"></p>
+                </div>
+                <div class="field">
+                  <label for="f-type">주택 유형</label>
+                  <select id="f-type" name="type">
+                    <option value="apt">아파트</option>
+                    <option value="villa">빌라·다세대</option>
+                    <option value="officetel">오피스텔</option>
+                    <option value="house">단독·다가구</option>
+                  </select>
+                  <p class="error" id="err-type" aria-live="polite"></p>
+                </div>
+                <div class="field">
+                  <label for="f-lease">계약 형태</label>
+                  <select id="f-lease" name="lease">
+                    <option value="jeonse">전세</option>
+                    <option value="banjeonse">반전세</option>
+                  </select>
+                  <p class="error" id="err-lease" aria-live="polite"></p>
+                </div>
+
+                <fieldset class="field-set">
+                  <legend>금액 (원 단위, 숫자만)</legend>
+                  <div class="money-grid">
+                    <div class="field">
+                      <label for="f-market">예상 매매 시세 <span class="req">필수</span></label>
+                      <input id="f-market" name="market" type="text" inputmode="numeric" autocomplete="off" placeholder="예: 300000000" aria-describedby="prev-market hint-market">
+                      <p class="hint" id="hint-market">실제 거래가 아니라 예상 시세입니다. 0이면 비율을 계산할 수 없어요.</p>
+                      <p class="preview" id="prev-market" aria-live="polite"></p>
+                      <p class="error" id="err-market" aria-live="polite"></p>
+                    </div>
+                    <div class="field">
+                      <label for="f-deposit">내 보증금 <span class="req">필수</span></label>
+                      <input id="f-deposit" name="deposit" type="text" inputmode="numeric" autocomplete="off" placeholder="예: 250000000" aria-describedby="prev-deposit">
+                      <p class="preview" id="prev-deposit" aria-live="polite"></p>
+                      <p class="error" id="err-deposit" aria-live="polite"></p>
+                    </div>
+                    <div class="field">
+                      <label for="f-seniorMortgage">선순위 근저당 채권최고액 합계 <span class="req">필수</span></label>
+                      <input id="f-seniorMortgage" name="seniorMortgage" type="text" inputmode="numeric" autocomplete="off" placeholder="없으면 0" aria-describedby="prev-seniorMortgage hint-mortgage">
+                      <p class="hint" id="hint-mortgage">등기부 을구의 채권최고액 합계. 실제 대출잔액보다 큰 경우가 많습니다.</p>
+                      <p class="preview" id="prev-seniorMortgage" aria-live="polite"></p>
+                      <p class="error" id="err-seniorMortgage" aria-live="polite"></p>
+                    </div>
+                    <div class="field">
+                      <label for="f-seniorTenant">선순위 임차보증금 합계 <span class="req">필수</span></label>
+                      <input id="f-seniorTenant" name="seniorTenant" type="text" inputmode="numeric" autocomplete="off" placeholder="없으면 0 (다가구에서 주로 확인)" aria-describedby="prev-seniorTenant">
+                      <p class="preview" id="prev-seniorTenant" aria-live="polite"></p>
+                      <p class="error" id="err-seniorTenant" aria-live="polite"></p>
+                    </div>
+                    <div class="field">
+                      <label for="f-publicPrice">공시가격 <span class="opt">선택</span></label>
+                      <input id="f-publicPrice" name="publicPrice" type="text" inputmode="numeric" autocomplete="off" placeholder="예: 210000000">
+                      <p class="preview" id="prev-publicPrice" aria-live="polite"></p>
+                      <p class="error" id="err-publicPrice" aria-live="polite"></p>
+                    </div>
+                    <div class="field">
+                      <label for="f-monthlyRent">월세 <span class="opt">선택 · 반전세</span></label>
+                      <input id="f-monthlyRent" name="monthlyRent" type="text" inputmode="numeric" autocomplete="off" placeholder="예: 500000">
+                      <p class="hint">월세는 위험비율 계산에 넣지 않습니다.</p>
+                      <p class="preview" id="prev-monthlyRent" aria-live="polite"></p>
+                      <p class="error" id="err-monthlyRent" aria-live="polite"></p>
+                    </div>
+                  </div>
+                </fieldset>
+
+                <fieldset class="field-set">
+                  <legend>날짜 <span class="opt">선택 · 입력하면 일정이 계산됩니다</span></legend>
+                  <div class="money-grid">
+                    <div class="field">
+                      <label for="f-contractDate">계약일</label>
+                      <input id="f-contractDate" name="contractDate" type="date">
+                      <p class="error" id="err-contractDate" aria-live="polite"></p>
+                    </div>
+                    <div class="field">
+                      <label for="f-moveInDate">잔금·입주일 (전입 예정일)</label>
+                      <input id="f-moveInDate" name="moveInDate" type="date">
+                      <p class="error" id="err-moveInDate" aria-live="polite"></p>
+                    </div>
+                    <div class="field">
+                      <label for="f-expiryDate">만기일</label>
+                      <input id="f-expiryDate" name="expiryDate" type="date">
+                      <p class="hint">비우면 계약일 + 24개월로 추정합니다.</p>
+                      <p class="error" id="err-expiryDate" aria-live="polite"></p>
+                    </div>
+                  </div>
+                </fieldset>
+
+                <div class="field field-wide">
+                  <label for="f-memo">메모 <span class="opt">선택</span></label>
+                  <textarea id="f-memo" name="memo" rows="3" maxlength="520" placeholder="집주인 연락 상황, 중개사 이름 등 자유롭게"></textarea>
+                  <p class="error" id="err-memo" aria-live="polite"></p>
+                </div>
+
+                <div class="form-actions field-wide">
+                  <button type="submit" class="btn btn-primary">저장하고 분석하기</button>
+                  <button type="button" class="btn btn-ghost" id="cancel-btn">취소</button>
+                </div>
+                <p class="form-status" id="form-status" role="alert"></p>
+              </form>
+            </section>
+
+            <!-- 분석 영역 -->
+            <section id="detail" class="detail" aria-label="선택한 물건 분석">
+              <div class="detail-head" id="detail-head"></div>
+
+              <div class="tabs" role="tablist" aria-label="분석 메뉴" id="tabs">
+                <button type="button" role="tab" id="tab-analysis" aria-controls="panel" aria-selected="true" data-tab="analysis">위험 분석</button>
+                <button type="button" role="tab" id="tab-checklist" aria-controls="panel" aria-selected="false" tabindex="-1" data-tab="checklist">점검표</button>
+                <button type="button" role="tab" id="tab-timeline" aria-controls="panel" aria-selected="false" tabindex="-1" data-tab="timeline">날짜·일정</button>
+                <button type="button" role="tab" id="tab-clauses" aria-controls="panel" aria-selected="false" tabindex="-1" data-tab="clauses">특약 문구</button>
+                <button type="button" role="tab" id="tab-compare" aria-controls="panel" aria-selected="false" tabindex="-1" data-tab="compare">비교</button>
+                <button type="button" role="tab" id="tab-data" aria-controls="panel" aria-selected="false" tabindex="-1" data-tab="data">설정·백업</button>
+              </div>
+
+              <div id="panel" class="panel" role="tabpanel" aria-labelledby="tab-analysis" tabindex="-1"></div>
+            </section>
+          </div>
+        </div>
+
+        <p class="disclaimer-block">이 앱의 계산은 입력값에 기반한 <strong>참고용 추정치</strong>입니다. 보장된 안전이나 법률·세무·재무 자문이 아닙니다. 등기부등본, 건축물대장, 납세 증명은 발급받아 직접 확인하고, 계약 전 공인중개사·법무사 등 전문가와 상의하세요.</p>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="faq-title">
+      <div class="wrap narrow">
+        <h2 id="faq-title" class="section-title">자주 묻는 질문</h2>
+        <div class="faq">
+          <details>
+            <summary>깡통전세는 무엇인가요?</summary>
+            <p>집값에 비해 보증금과 앞선 빚(근저당, 선순위 임차보증금)이 거의 같거나 더 큰 전세입니다. 집이 경매로 넘어가면 낙찰가에서 앞선 빚을 먼저 갚기 때문에 보증금을 전부 돌려받지 못할 수 있습니다.</p>
+          </details>
+          <details>
+            <summary>위험비율은 어떻게 계산하나요?</summary>
+            <p>(선순위 근저당 채권최고액 합계 + 선순위 임차보증금 합계 + 내 보증금) ÷ 예상 매매 시세입니다. 70% 이하는 안전, 70~80% 주의, 80~90% 위험, 90% 초과는 매우 위험으로 나눕니다. 구간 값은 이 앱의 기준이며 법정 기준이 아닙니다.</p>
+          </details>
+          <details>
+            <summary>점수가 낮으면 안전한가요?</summary>
+            <p>아닙니다. 입력한 숫자로 본 참고 지표일 뿐 보장이 아닙니다. 등기부 재확인, 임대인 체납 확인, 전세보증보험 가입 가능 여부는 별도로 확인해야 합니다.</p>
+          </details>
+          <details>
+            <summary>입력한 데이터는 어디에 저장되나요?</summary>
+            <p>이 브라우저의 저장 공간(localStorage)에만 저장되며 서버로 보내지 않습니다. 다른 기기로 옮기려면 설정·백업 메뉴에서 JSON 파일을 내려받으세요. AI 설명 버튼을 누를 때만 숫자와 주택 유형이 Anthropic API로 전송됩니다.</p>
+          </details>
+          <details>
+            <summary>이 앱이 법률 자문을 해 주나요?</summary>
+            <p>아니요. 날짜 계산과 체크리스트는 일반 정보입니다. 기준값(낙찰가율, 공시가격 비율, 계약갱신 기간 등)은 바뀔 수 있으니 기준일 라벨을 확인하고, 실제 계약은 전문가와 함께 검토하세요.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-grid">
+      <div>
+        <p class="footer-brand">jeonsecheck</p>
+        <p class="muted">전세 보증금 안전 점검 도구</p>
+      </div>
+      <div>
+        <p><strong>개인정보</strong></p>
+        <p class="muted">데이터는 이 브라우저에만 저장됩니다. 서버로 전송하지 않으며, AI 설명을 요청한 경우에만 숫자가 전송됩니다.</p>
+      </div>
+      <div>
+        <p><strong>면책</strong></p>
+        <p class="muted">계산 결과는 참고용 추정치이며 법률·세무·재무 자문이 아닙니다. 보장된 안전을 의미하지 않습니다.</p>
+      </div>
+    </div>
+    <p class="wrap copyright">&copy; 2026 jeonsecheck. All rights reserved.</p>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

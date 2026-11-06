@@ -117,7 +117,7 @@ export function fallbackAdvice(p, analysis) {
   if (p.seniorTenant > 0) questions.push('선순위 임차인의 보증금과 전입·확정일자 날짜를 확인할 수 있나요?');
   if (p.publicPrice === null || p.publicPrice === undefined) questions.push('이 집의 공시가격은 얼마인가요? 보증보험 가입 가능 여부를 함께 알아봐도 될까요?');
   questions.push('잔금 지급 전에 등기부를 다시 떼어 새 권리가 없는지 같이 확인해도 될까요?');
-  questions.push('계약서에 근저당·체납 관련 특약을 넣어 줄 수 있나요?');
+  questions.push('계약서에 권리 변동 금지와 세금 체납 없음 특약을 넣어 줄 수 있나요?');
 
   return {
     ok: true,
