@@ -1,0 +1,12 @@
+{
+  "name": "jeonsecheck",
+  "version": "1.0.0",
+  "private": true,
+  "description": "전세 보증금 안전 점검 (정적 웹앱, 빌드 없음)",
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 8111",
+    "test": "node --test tests/logic.test.js"
+  },
+  "license": "UNLICENSED"
+}
