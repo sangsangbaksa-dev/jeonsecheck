@@ -6,7 +6,7 @@ import {
   validateProperty, validateSettings, toggleCheck, stageProgress, overallProgress,
   loadData, saveData, buildBackup, parseBackup, defaultData, makeId, toYmd, STORAGE_KEY,
   normalizeRegistry, defaultRegistry, summarizeRegistry, REGISTRY_LIMITS,
-  timelineStatus, dDayLabel, nextEvent, reminderFor, REMINDER_LEAD_DAYS, rankSafest,
+  timelineStatus, dDayLabel, nextEvent, reminderFor, REMINDER_LEAD_DAYS, rankSafest, checklistPrintModel,
 } from './logic.js';
 import {
   AI_KEY_STORAGE, isPlausibleKey, buildAdvicePayload, requestAdvice, fallbackAdvice,
@@ -747,6 +747,10 @@ function renderChecklist(panel, p) {
 
   panel.append(el('div', { class: 'btn-row' }, [
     el('button', {
+      type: 'button', class: 'btn btn-primary btn-sm', text: '인쇄용 점검표 출력',
+      onclick: () => printChecklist(selectedProperty()),
+    }),
+    el('button', {
       type: 'button', class: 'btn btn-ghost btn-sm', text: '이 물건의 체크 초기화',
       onclick: () => {
         if (!window.confirm('이 물건의 체크를 모두 지울까요?')) return;
@@ -758,6 +762,31 @@ function renderChecklist(panel, p) {
     }),
   ]));
   panel.append(el('p', { class: 'source', text: '체크 상태는 이 브라우저에 물건별로 저장됩니다. 등기부·건축물대장 등 실제 서류 확인을 대신하지 않습니다.' }));
+}
+
+/** 인쇄 전용 시트를 채우고 인쇄 대화상자를 연다. 화면에서는 숨겨져 있다(styles.css). */
+function printChecklist(p) {
+  if (!p) return;
+  const model = checklistPrintModel(p, todayYmd(), analysisOf(p));
+  const sheet = clear($('#print-sheet'));
+  sheet.append(
+    el('h1', { text: model.title }),
+    el('p', { class: 'print-meta', text: `${model.meta} · 출력일 ${formatKoreanDate(model.printedOn)}` }),
+    el('p', { class: 'print-meta', text: model.risk.length ? model.risk.join(' · ') : '위험비율: 입력이 부족해 계산하지 않았어요.' }),
+    el('p', { class: 'print-meta', text: `전체 ${model.overall.done} / ${model.overall.total} 완료` }),
+  );
+  for (const s of model.stages) {
+    sheet.append(el('section', { class: 'print-stage' }, [
+      el('h2', { text: `${s.title} (${s.done}/${s.total})` }),
+      el('ul', {}, s.items.map((i) => el('li', {}, [
+        el('span', { class: 'print-mark', text: i.mark }),
+        document.createTextNode(` ${i.text}`),
+        i.hint ? el('small', { text: ` (${i.hint})` }) : null,
+      ]))),
+    ]));
+  }
+  sheet.append(el('p', { class: 'print-notice', text: model.notice }));
+  window.print();
 }
 
 // ---------------------------------------------------------------------------

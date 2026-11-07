@@ -1048,3 +1048,47 @@ export function rankSafest(items) {
     .map((x) => x.id);
   return { order, bestIds };
 }
+
+// ---------------------------------------------------------------------------
+// 인쇄용 점검표 모델. 화면과 같은 체크 상태를 ☐/☑ 표시로 바꾼 구조만 만든다.
+// ---------------------------------------------------------------------------
+
+export const PRINT_NOTICE = '이 목록은 계약 확인을 돕는 참고 체크리스트입니다. 등기부·건축물대장·납세 증명 등 원본 서류를 대신하지 않으며 법률 자문이 아닙니다. 기준값은 확인 필요 항목입니다.';
+
+/**
+ * p: 저장된 물건, analysis: analyzeProperty 결과(없어도 됨), today: 'YYYY-MM-DD'.
+ * 메모와 주소 메모는 넣지 않는다 (인쇄물에 필요 없는 개인 정보).
+ */
+export function checklistPrintModel(p, today, analysis = null) {
+  const checks = p.checks ?? {};
+  const stages = CHECKLIST.map((s) => {
+    const prog = stageProgress(checks, s.key);
+    return {
+      key: s.key,
+      title: s.title,
+      done: prog.done,
+      total: prog.total,
+      items: s.items.map((i) => ({
+        id: i.id,
+        text: i.text,
+        hint: i.hint || '',
+        done: Boolean(checks[i.id]),
+        mark: checks[i.id] ? '☑' : '☐',
+      })),
+    };
+  });
+  const typeLabel = PROPERTY_TYPES.find((t) => t.value === p.type)?.label ?? '';
+  const leaseLabel = LEASE_TYPES.find((t) => t.value === p.lease)?.label ?? '';
+  const risk = analysis?.ok
+    ? [`위험비율 ${formatPct(analysis.ratioPct)} (${analysis.band.label}, 참고)`, `기준일 ${CONSTANTS.기준일} · 확인 필요`]
+    : [];
+  return {
+    title: `${p.name} · 전세 계약 점검표`,
+    meta: [typeLabel, leaseLabel].filter(Boolean).join(' · '),
+    printedOn: today,
+    risk,
+    overall: overallProgress(checks),
+    stages,
+    notice: PRINT_NOTICE,
+  };
+}

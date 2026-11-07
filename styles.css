@@ -421,3 +421,19 @@ tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
   .money-grid { grid-template-columns: repeat(3, 1fr); }
   .section { padding: 4.5rem 0; }
 }
+
+/* 인쇄: 인쇄 시트만 남기고 나머지 화면은 숨긴다 */
+.print-sheet { display: none; }
+@media print {
+  @page { margin: 14mm; }
+  body > *:not(.print-sheet) { display: none !important; }
+  .print-sheet { display: block; color: #000; background: #fff; font-size: 11pt; }
+  .print-sheet h1 { font-size: 16pt; margin: 0 0 4mm; }
+  .print-sheet h2 { font-size: 12pt; margin: 5mm 0 2mm; border-bottom: 0.3mm solid #000; }
+  .print-sheet ul { list-style: none; padding: 0; margin: 0; }
+  .print-sheet li { padding: 1.2mm 0; break-inside: avoid; }
+  .print-mark { display: inline-block; width: 6mm; font-size: 12pt; }
+  .print-sheet small { color: #444; }
+  .print-meta, .print-notice { margin: 1mm 0; }
+  .print-notice { margin-top: 6mm; font-size: 9pt; }
+}

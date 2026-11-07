@@ -4,7 +4,7 @@ import {
   validateProperty, validateRegistry, normalizeRegistry, normalizeProperty, mortgageTotal,
   summarizeRegistry, defaultRegistry, REGISTRY_LIMITS, normalizeData, buildBackup, parseBackup, defaultData,
   timelineStatus, dDayLabel, nextEvent, reminderFor, buildIcs, buildTimeline, REMINDER_LEAD_DAYS,
-  CLAUSES, composeClauses, compareRatio, rankSafest, analyzeProperty,
+  CLAUSES, composeClauses, compareRatio, rankSafest, analyzeProperty, checklistPrintModel, CHECKLIST, PRINT_NOTICE,
 } from '../logic.js';
 
 const goodBase = {
@@ -261,5 +261,39 @@ describe('비교 순위 (참고)', () => {
       { id: 'p2', totalClaims: a2.totalClaims, market: p2.market, exposed: a2.auction.exposed },
     ]);
     assert.deepEqual(r.bestIds, ['p2']); // 300M 중 260M(86.7%) vs 400M 중 300M(75%)
+  });
+});
+
+describe('인쇄용 점검표 모델', () => {
+  const p = {
+    id: 'pp', name: '역삼 빌라', address: '서울 강남구 역삼동 123-4', memo: '집주인 010-1111-2222', type: 'villa', lease: 'jeonse',
+    market: 300_000_000, deposit: 200_000_000, seniorMortgage: 60_000_000, seniorTenant: 0,
+    checks: { 'reg-owner': true, 'same-day-move': true },
+  };
+  const analysis = analyzeProperty(p, { auctionRatioPct: 80, publicRatioPct: 140 });
+  const model = checklistPrintModel(p, '2026-11-07', analysis);
+  test('단계와 항목 수가 점검표 원본과 같고 체크는 ☑/☐로 표시된다', () => {
+    assert.equal(model.stages.length, CHECKLIST.length);
+    const total = model.stages.reduce((n, s) => n + s.items.length, 0);
+    assert.equal(model.overall.total, total);
+    assert.equal(model.overall.done, 2);
+    const owner = model.stages.flatMap((s) => s.items).find((i) => i.id === 'reg-owner');
+    assert.equal(owner.mark, '☑');
+    assert.equal(model.stages.flatMap((s) => s.items).find((i) => i.id === 'tax-arrears').mark, '☐');
+  });
+  test('인쇄물에 주소 메모와 메모가 들어가지 않는다', () => {
+    const text = JSON.stringify(model);
+    assert.ok(!text.includes('역삼동'));
+    assert.ok(!text.includes('010-1111'));
+  });
+  test('위험비율 줄과 확인 필요 기준일이 들어가고, 계산 불가면 줄이 비어 있다', () => {
+    assert.ok(model.risk[0].includes('위험비율'));
+    assert.ok(model.risk[1].includes('확인 필요'));
+    const none = checklistPrintModel({ ...p, market: 0 }, '2026-11-07', analyzeProperty({ ...p, market: 0 }, {}));
+    assert.deepEqual(none.risk, []);
+  });
+  test('안내문은 법률 자문이 아님을 밝힌다', () => {
+    assert.equal(model.notice, PRINT_NOTICE);
+    assert.ok(PRINT_NOTICE.includes('법률 자문이 아닙니다'));
   });
 });
