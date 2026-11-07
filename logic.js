@@ -1053,7 +1053,84 @@ export function rankSafest(items) {
 // 인쇄용 점검표 모델. 화면과 같은 체크 상태를 ☐/☑ 표시로 바꾼 구조만 만든다.
 // ---------------------------------------------------------------------------
 
-export const PRINT_NOTICE = '이 목록은 계약 확인을 돕는 참고 체크리스트입니다. 등기부·건축물대장·납세 증명 등 원본 서류를 대신하지 않으며 법률 자문이 아닙니다. 기준값은 확인 필요 항목입니다.';
+/**
+ * 분석 화면의 숫자마다 "무엇을 뜻하는지, 어디서 나왔는지"를 적는다.
+ * basis: '입력값' | '계산 규칙' | '가정' | '참고 기준'. 기준·가정 값에는 항상 '확인 필요'를 붙인다.
+ * 분석이 계산 불가면 빈 배열.
+ */
+export function explainRiskNumbers(a) {
+  if (!a || !a.ok) return [];
+  const items = [];
+  items.push({
+    key: 'ratio',
+    label: '위험비율',
+    value: formatPct(a.ratioPct),
+    formula: '(선순위 근저당 + 선순위 임차보증금 + 내 보증금) ÷ 예상 매매 시세',
+    meaning: '내 보증금이 포함된 청구 합계가 예상 시세의 몇 %인지 보여 줍니다. 값이 클수록 시세 대비 앞선 채권이 많다는 뜻입니다.',
+    basis: '계산 규칙',
+    note: '시세는 추정치입니다. 실제 거래가와 다를 수 있어요.',
+  });
+  items.push({
+    key: 'band',
+    label: '등급',
+    value: a.band.label,
+    formula: '70% 이하 안전 · 80% 이하 주의 · 90% 이하 위험 · 90% 초과 매우 위험',
+    meaning: '위험비율을 이 앱이 정한 네 구간에 넣은 결과입니다.',
+    basis: '참고 기준',
+    note: `${CONSTANTS.riskBandsSource}`,
+  });
+  a.scenarios.forEach((s) => {
+    items.push({
+      key: `drop${s.dropPct}`,
+      label: `시세 ${s.dropPct}% 하락 시 비율`,
+      value: s.ratioPct === null ? '계산 불가' : formatPct(s.ratioPct),
+      formula: `청구 합계 ÷ (시세 × ${100 - s.dropPct}%)`,
+      meaning: `시세가 ${s.dropPct}% 떨어졌다고 가정했을 때의 위험비율입니다. 실제로 떨어진다는 예측이 아닙니다.`,
+      basis: '가정',
+      note: CONSTANTS.scenarioSource,
+    });
+  });
+  items.push({
+    key: 'auctionPrice',
+    label: '가정 낙찰가',
+    value: formatKoreanWon(a.auction.auctionPrice),
+    formula: `예상 시세 × 낙찰가율 ${a.auction.auctionPct}%`,
+    meaning: '경매로 나왔을 때 가정한 낙찰 금액입니다. 실제 낙찰가율은 지역·물건마다 크게 다릅니다.',
+    basis: '가정',
+    note: CONSTANTS.auctionRatioSource,
+  });
+  items.push({
+    key: 'distributable',
+    label: '배당 가능액',
+    value: formatKoreanWon(a.auction.distributable),
+    formula: '가정 낙찰가 − 선순위 근저당 − 선순위 임차보증금 (0 미만이면 0)',
+    meaning: '선순위 채권을 먼저 갚고 남는 금액입니다. 이 금액 안에서 내 보증금을 나눠 받는다고 단순화했습니다.',
+    basis: '계산 규칙',
+    note: '경매비용, 최우선변제 소액보증금, 확정일자 순서는 반영하지 않았어요. (단순 모델, 확인 필요)',
+  });
+  items.push({
+    key: 'exposed',
+    label: '배당 못 받을 수 있는 금액',
+    value: formatKoreanWon(a.auction.exposed),
+    formula: '내 보증금 − min(내 보증금, 배당 가능액)',
+    meaning: '가정한 경매에서 보증금 중 배당받지 못할 수 있는 몫입니다. 0원이면 가정 범위 안에서는 전액 배당 대상입니다.',
+    basis: '계산 규칙',
+    note: '단순 모델의 결과입니다. 실제 배당표와 다를 수 있어요.',
+  });
+  const prot = a.protection;
+  items.push({
+    key: 'publicLimit',
+    label: '공시가격 기준 한도',
+    value: prot.status === 'unknown' ? '공시가격 미입력' : formatKoreanWon(prot.limit),
+    formula: `공시가격 × ${prot.publicPct}%`,
+    meaning: '청구 합계와 비교하는 참고 한도입니다. 이 한도를 넘지 않는다고 보증보험에 가입할 수 있다는 뜻은 아닙니다.',
+    basis: '참고 기준',
+    note: `${CONSTANTS.publicRatioSource}. 실제 가입 기준은 가입 기관에 확인 필요`,
+  });
+  return items;
+}
+
+export const PRINT_NOTICE ='이 목록은 계약 확인을 돕는 참고 체크리스트입니다. 등기부·건축물대장·납세 증명 등 원본 서류를 대신하지 않으며 법률 자문이 아닙니다. 기준값은 확인 필요 항목입니다.';
 
 /**
  * p: 저장된 물건, analysis: analyzeProperty 결과(없어도 됨), today: 'YYYY-MM-DD'.

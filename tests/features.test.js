@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import {
   validateProperty, validateRegistry, normalizeRegistry, normalizeProperty, mortgageTotal,
   summarizeRegistry, defaultRegistry, REGISTRY_LIMITS, normalizeData, buildBackup, parseBackup, defaultData,
+  formatPct, formatKoreanWon,
   timelineStatus, dDayLabel, nextEvent, reminderFor, buildIcs, buildTimeline, REMINDER_LEAD_DAYS,
-  CLAUSES, composeClauses, compareRatio, rankSafest, analyzeProperty, checklistPrintModel, CHECKLIST, PRINT_NOTICE,
+  CLAUSES, composeClauses, compareRatio, rankSafest, analyzeProperty, checklistPrintModel, CHECKLIST, PRINT_NOTICE, explainRiskNumbers,
 } from '../logic.js';
 
 const goodBase = {
@@ -295,5 +296,40 @@ describe('인쇄용 점검표 모델', () => {
   test('안내문은 법률 자문이 아님을 밝힌다', () => {
     assert.equal(model.notice, PRINT_NOTICE);
     assert.ok(PRINT_NOTICE.includes('법률 자문이 아닙니다'));
+  });
+});
+
+describe('위험 숫자 설명', () => {
+  const p = { market: 300_000_000, deposit: 200_000_000, seniorMortgage: 60_000_000, seniorTenant: 0, publicPrice: null };
+  const a = analyzeProperty(p, { auctionRatioPct: 80, publicRatioPct: 140 });
+  const items = explainRiskNumbers(a);
+  test('계산 가능한 분석은 항목마다 값, 계산식, 뜻, 근거가 있다', () => {
+    assert.ok(items.length >= 8);
+    for (const it of items) {
+      assert.ok(it.label && it.value && it.formula && it.meaning && it.note, it.key);
+      assert.ok(['입력값', '계산 규칙', '가정', '참고 기준'].includes(it.basis) || it.basis === '계산 규칙', it.key);
+    }
+  });
+  test('기준과 가정 항목에는 확인 필요 표시가 있다', () => {
+    for (const it of items.filter((x) => x.basis === '가정' || x.basis === '참고 기준')) {
+      assert.ok(it.note.includes('확인 필요'), it.key);
+    }
+  });
+  test('위험비율과 등급 값이 분석 결과와 일치한다', () => {
+    assert.equal(items.find((x) => x.key === 'ratio').value, formatPct(a.ratioPct));
+    assert.equal(items.find((x) => x.key === 'band').value, a.band.label);
+    assert.equal(items.find((x) => x.key === 'exposed').value, formatKoreanWon(a.auction.exposed));
+  });
+  test('공시가격이 없으면 한도 항목은 미입력으로 설명한다', () => {
+    assert.equal(items.find((x) => x.key === 'publicLimit').value, '공시가격 미입력');
+  });
+  test('계산 불가 분석은 설명 없음', () => {
+    assert.deepEqual(explainRiskNumbers(analyzeProperty({ ...p, market: 0 }, {})), []);
+    assert.deepEqual(explainRiskNumbers(null), []);
+  });
+  test('시세 10% 하락은 예측이 아니라 가정이라고 적는다', () => {
+    const drop = items.find((x) => x.key === 'drop10');
+    assert.equal(drop.basis, '가정');
+    assert.ok(drop.meaning.includes('실제로 떨어진다는 예측이 아닙니다'));
   });
 });

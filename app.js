@@ -7,6 +7,7 @@ import {
   loadData, saveData, buildBackup, parseBackup, defaultData, makeId, toYmd, STORAGE_KEY,
   normalizeRegistry, defaultRegistry, summarizeRegistry, REGISTRY_LIMITS,
   timelineStatus, dDayLabel, nextEvent, reminderFor, REMINDER_LEAD_DAYS, rankSafest, checklistPrintModel,
+  explainRiskNumbers,
 } from './logic.js';
 import {
   AI_KEY_STORAGE, isPlausibleKey, buildAdvicePayload, requestAdvice, fallbackAdvice,
@@ -492,6 +493,7 @@ function renderAnalysis(panel, p) {
   ]));
 
   panel.append(registryCard(p));
+  panel.append(numberGuide(a));
 
   // 시나리오
   const rows = [
@@ -561,6 +563,31 @@ function renderAnalysis(panel, p) {
   panel.append(renderAiBox(p, a));
 
   panel.append(el('p', { class: 'note-warn', style: 'margin-top:1rem', text: '이 결과는 입력값 기준의 참고 계산입니다. 보장된 안전이 아니며 법률·세무·재무 자문이 아닙니다. 등기부와 임대인 정보를 직접 확인하세요.' }));
+}
+
+const BASIS_CLASS = { '입력값': 'basis-input', '계산 규칙': 'basis-calc', '가정': 'basis-assume', '참고 기준': 'basis-ref' };
+
+/** 숫자마다 뜻·계산식·근거를 붙여 보여 준다. */
+function numberGuide(a) {
+  const list = el('dl', { class: 'guide-list' });
+  for (const it of explainRiskNumbers(a)) {
+    list.append(el('div', { class: 'guide-item' }, [
+      el('dt', {}, [
+        el('span', { class: 'guide-label', text: it.label }),
+        el('span', { class: `basis ${BASIS_CLASS[it.basis] ?? 'basis-calc'}`, text: it.basis }),
+      ]),
+      el('dd', {}, [
+        el('p', { class: 'guide-value', text: it.value }),
+        el('p', { class: 'guide-formula', text: it.formula }),
+        el('p', { text: it.meaning }),
+        el('p', { class: 'source', text: it.note }),
+      ]),
+    ]));
+  }
+  return el('details', { class: 'guide', open: true }, [
+    el('summary', { text: '숫자 하나씩 읽는 법' }),
+    list,
+  ]);
 }
 
 function registryCard(p) {
