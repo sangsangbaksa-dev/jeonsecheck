@@ -1011,3 +1011,40 @@ export function summaryRows(properties, settings) {
 }
 
 export const SUMMARY_HEADERS = ['이름', '주택 유형', '계약 형태', '예상 매매 시세(원)', '내 보증금(원)', '선순위 근저당 합계(원)', '선순위 임차보증금 합계(원)', '위험비율(%)', '등급(참고)', '만기일'];
+
+// ---------------------------------------------------------------------------
+// 비교 순위 (참고). "가장 안전하다"는 판단이 아니라 입력값 기준 위험비율의 순서일 뿐이다.
+// ---------------------------------------------------------------------------
+
+/**
+ * 위험비율 두 개를 정수 교차곱으로 비교한다. a < b 이면 -1, 같으면 0, 크면 1.
+ * 입력: { totalClaims, market } (원 단위 정수, market > 0).
+ */
+export function compareRatio(a, b) {
+  const left = BigInt(a.totalClaims) * BigInt(b.market);
+  const right = BigInt(b.totalClaims) * BigInt(a.market);
+  if (left < right) return -1;
+  return left > right ? 1 : 0;
+}
+
+/**
+ * 비교 대상에서 위험비율이 가장 낮은 물건을 찾는다.
+ * items: [{ id, totalClaims, market, exposed }]. 계산할 수 없는 항목(시세 0, 값 누락)은 순위에서 뺀다.
+ * 동률 기준: 위험비율이 같으면 경매 노출액이 작은 쪽이 앞선다.
+ * 반환 { order: 순위대로 id 배열, bestIds: 1위와 위험비율·노출액이 모두 같은 id들 }.
+ * 계산 가능한 물건이 2개 미만이면 bestIds는 빈 배열 (강조할 비교가 없음).
+ */
+export function rankSafest(items) {
+  const usable = (Array.isArray(items) ? items : []).filter((x) => x
+    && Number.isSafeInteger(x.totalClaims) && x.totalClaims >= 0
+    && Number.isSafeInteger(x.market) && x.market > 0
+    && Number.isSafeInteger(x.exposed) && x.exposed >= 0);
+  const sorted = [...usable].sort((a, b) => compareRatio(a, b) || a.exposed - b.exposed);
+  const order = sorted.map((x) => x.id);
+  if (sorted.length < 2) return { order, bestIds: [] };
+  const top = sorted[0];
+  const bestIds = sorted
+    .filter((x) => compareRatio(x, top) === 0 && x.exposed === top.exposed)
+    .map((x) => x.id);
+  return { order, bestIds };
+}

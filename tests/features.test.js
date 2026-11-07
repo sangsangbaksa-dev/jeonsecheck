@@ -4,7 +4,7 @@ import {
   validateProperty, validateRegistry, normalizeRegistry, normalizeProperty, mortgageTotal,
   summarizeRegistry, defaultRegistry, REGISTRY_LIMITS, normalizeData, buildBackup, parseBackup, defaultData,
   timelineStatus, dDayLabel, nextEvent, reminderFor, buildIcs, buildTimeline, REMINDER_LEAD_DAYS,
-  CLAUSES, composeClauses,
+  CLAUSES, composeClauses, compareRatio, rankSafest, analyzeProperty,
 } from '../logic.js';
 
 const goodBase = {
@@ -219,5 +219,47 @@ describe('특약 문구 라이브러리', () => {
     assert.equal(composeClauses([]), '');
     assert.equal(composeClauses(undefined), '');
     assert.equal(composeClauses([CLAUSES[1].id, 'nope']).split('\n\n').length, 1);
+  });
+});
+
+describe('비교 순위 (참고)', () => {
+  const item = (id, totalClaims, market, exposed) => ({ id, totalClaims, market, exposed });
+  test('위험비율이 가장 낮은 물건이 1위 (정수 교차곱 비교)', () => {
+    const r = rankSafest([item('a', 70, 100, 0), item('b', 60, 100, 5), item('c', 80, 100, 0)]);
+    assert.deepEqual(r.order, ['b', 'a', 'c']);
+    assert.deepEqual(r.bestIds, ['b']);
+  });
+  test('분모가 다른 비율도 정확히 비교한다 (2/3 ≈ 66.67% < 66.7%)', () => {
+    assert.equal(compareRatio({ totalClaims: 2, market: 3 }, { totalClaims: 667, market: 1000 }), -1);
+    assert.equal(compareRatio({ totalClaims: 1, market: 2 }, { totalClaims: 2, market: 4 }), 0);
+    assert.equal(compareRatio({ totalClaims: 1, market: 3 }, { totalClaims: 1, market: 2 }), -1);
+  });
+  test('위험비율이 같으면 경매 노출액이 작은 쪽이 앞선다', () => {
+    const r = rankSafest([item('x', 50, 100, 9), item('y', 50, 100, 1)]);
+    assert.deepEqual(r.order, ['y', 'x']);
+    assert.deepEqual(r.bestIds, ['y']);
+  });
+  test('비율과 노출액이 모두 같으면 bestIds 여러 개', () => {
+    const r = rankSafest([item('x', 50, 100, 1), item('y', 100, 200, 1), item('z', 90, 100, 1)]);
+    assert.deepEqual(r.bestIds, ['x', 'y']);
+  });
+  test('시세 0·값 누락 물건은 순위에서 빠진다', () => {
+    const r = rankSafest([item('a', 10, 0, 0), item('b', 10, 100, 0), item('c', null, 100, 0), item('d', 20, 100, 0)]);
+    assert.deepEqual(r.order, ['b', 'd']);
+  });
+  test('계산 가능한 물건이 1개면 강조하지 않는다', () => {
+    const r = rankSafest([item('a', 10, 100, 0)]);
+    assert.deepEqual(r.order, ['a']);
+    assert.deepEqual(r.bestIds, []);
+  });
+  test('analyzeProperty 결과와 함께 쓸 수 있다', () => {
+    const p1 = { market: 300_000_000, deposit: 200_000_000, seniorMortgage: 60_000_000, seniorTenant: 0 };
+    const p2 = { market: 400_000_000, deposit: 200_000_000, seniorMortgage: 100_000_000, seniorTenant: 0 };
+    const a1 = analyzeProperty(p1, {}); const a2 = analyzeProperty(p2, {});
+    const r = rankSafest([
+      { id: 'p1', totalClaims: a1.totalClaims, market: p1.market, exposed: a1.auction.exposed },
+      { id: 'p2', totalClaims: a2.totalClaims, market: p2.market, exposed: a2.auction.exposed },
+    ]);
+    assert.deepEqual(r.bestIds, ['p2']); // 300M 중 260M(86.7%) vs 400M 중 300M(75%)
   });
 });

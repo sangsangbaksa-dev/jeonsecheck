@@ -6,7 +6,7 @@ import {
   validateProperty, validateSettings, toggleCheck, stageProgress, overallProgress,
   loadData, saveData, buildBackup, parseBackup, defaultData, makeId, toYmd, STORAGE_KEY,
   normalizeRegistry, defaultRegistry, summarizeRegistry, REGISTRY_LIMITS,
-  timelineStatus, dDayLabel, nextEvent, reminderFor, REMINDER_LEAD_DAYS,
+  timelineStatus, dDayLabel, nextEvent, reminderFor, REMINDER_LEAD_DAYS, rankSafest,
 } from './logic.js';
 import {
   AI_KEY_STORAGE, isPlausibleKey, buildAdvicePayload, requestAdvice, fallbackAdvice,
@@ -942,10 +942,23 @@ function renderCompare(panel) {
     return;
   }
   const analyses = picked.map((p) => analysisOf(p));
-  const head = el('tr', {}, [el('th', { scope: 'col', text: '항목' }), ...picked.map((p) => el('th', { scope: 'col', class: 'num', text: p.name }))]);
+  const ranking = rankSafest(picked.map((p, i) => ({
+    id: p.id,
+    totalClaims: analyses[i].totalClaims,
+    market: p.market,
+    exposed: analyses[i].ok ? analyses[i].auction.exposed : null,
+  })));
+  const isBest = (p) => ranking.bestIds.includes(p.id);
+  const head = el('tr', {}, [
+    el('th', { scope: 'col', text: '항목' }),
+    ...picked.map((p) => el('th', { scope: 'col', class: `num${isBest(p) ? ' is-best' : ''}` }, [
+      document.createTextNode(p.name),
+      isBest(p) ? el('span', { class: 'best-tag', text: '위험비율 가장 낮음 (참고)' }) : null,
+    ])),
+  ]);
   const metric = (label, fn) => el('tr', {}, [
     el('th', { scope: 'row', text: label }),
-    ...picked.map((p, i) => el('td', { class: 'num' }, [document.createTextNode(fn(p, analyses[i]))])),
+    ...picked.map((p, i) => el('td', { class: `num${isBest(p) ? ' is-best' : ''}` }, [document.createTextNode(fn(p, analyses[i]))])),
   ]);
   const rows = [
     metric('유형·계약', (p) => `${labelOf(PROPERTY_TYPES, p.type)} · ${labelOf(LEASE_TYPES, p.lease)}`),
@@ -955,13 +968,23 @@ function renderCompare(panel) {
     metric('선순위 임차 합계', (p) => formatKoreanWon(p.seniorTenant)),
     metric('위험비율', (p, a) => (a.ok ? formatPct(a.ratioPct) : '계산 불가')),
     metric('등급 (참고)', (p, a) => (a.ok ? a.band.label : '-')),
+    metric('비교 순위 (참고)', (p) => {
+      const idx = ranking.order.indexOf(p.id);
+      return idx < 0 ? '계산 불가' : `${idx + 1}위`;
+    }),
     metric('시세 10% 하락 시', (p, a) => (a.ok ? `${formatPct(a.scenarios[0].ratioPct)} · ${a.scenarios[0].band.label}` : '-')),
     metric('시세 20% 하락 시', (p, a) => (a.ok ? `${formatPct(a.scenarios[1].ratioPct)} · ${a.scenarios[1].band.label}` : '-')),
     metric('경매 시 배당 못 받을 수 있는 금액 (가정)', (p, a) => (a.ok ? formatKoreanWon(a.auction.exposed) : '-')),
-    metric('공시가격 대비 참고', (p, a) => (a.ok ? { unknown: '공시가격 미입력', within: `${CONSTANTS.publicRatioPct}% 이내`, over: `${CONSTANTS.publicRatioPct}% 초과` }[a.protection.status] : '-')),
+    metric('공시가격 대비 참고', (p, a) => (a.ok ? { unknown: '공시가격 미입력', within: `${a.protection.publicPct}% 이내`, over: `${a.protection.publicPct}% 초과` }[a.protection.status] : '-')),
     metric('만기일', (p) => (p.expiryDate ? formatKoreanDate(p.expiryDate) : '미입력')),
   ];
-  panel.append(el('div', { class: 'table-wrap' }, [el('table', {}, [el('thead', {}, [head]), el('tbody', {}, rows)])]));
+  if (ranking.bestIds.length) {
+    const names = picked.filter((p) => isBest(p)).map((p) => p.name).join(', ');
+    panel.append(el('p', { class: 'note-ok', text: `입력값 기준 위험비율이 가장 낮은 물건: ${names}. 이 강조는 참고 순서일 뿐이며, 등기·임대인 확인과 다른 조건(확인 필요)을 대신하지 않아요.` }));
+  } else {
+    panel.append(el('p', { class: 'source', text: '위험비율이 같거나 계산 가능한 물건이 2개 미만이면 순서 강조를 하지 않아요.' }));
+  }
+  panel.append(el('div', { class: 'table-wrap' }, [el('table', { class: 'compare-table' }, [el('thead', {}, [head]), el('tbody', {}, rows)])]));
   panel.append(el('p', { class: 'source', text: '비교표는 같은 가정(낙찰가율·공시가격 비율)으로 계산합니다. 가정 값은 설정·백업 탭에서 바꿀 수 있어요.' }));
 }
 
