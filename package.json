@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "python3 -m http.server 8111",
-    "test": "node --test tests/logic.test.js tests/ai.test.js"
+    "test": "node --test tests/logic.test.js tests/ai.test.js tests/features.test.js"
   },
   "license": "UNLICENSED"
 }

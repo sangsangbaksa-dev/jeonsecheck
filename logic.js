@@ -472,10 +472,12 @@ export function validateProperty(input, prev = null) {
   if (!lease) errors.lease = '계약 형태를 선택해주세요.';
 
   const money = {};
+  // 등기부 입력(registry)이 함께 오면 근저당 합계는 행 목록에서 계산하므로 seniorMortgage 칸은 따로 받지 않는다.
+  const useRegistry = input.registry !== undefined;
   const moneyFields = [
     ['market', '예상 매매 시세', true],
     ['deposit', '내 보증금', true],
-    ['seniorMortgage', '선순위 근저당 채권최고액 합계', true],
+    ...(useRegistry ? [] : [['seniorMortgage', '선순위 근저당 채권최고액 합계', true]]),
     ['seniorTenant', '선순위 임차보증금 합계', true],
     ['publicPrice', '공시가격', false],
     ['monthlyRent', '월세', false],
@@ -490,6 +492,18 @@ export function validateProperty(input, prev = null) {
       money[key] = null;
     } else {
       money[key] = parsed.value;
+    }
+  }
+
+  let registry = prev?.registry ? normalizeRegistry(prev.registry) : defaultRegistry();
+  if (useRegistry) {
+    const reg = validateRegistry(input.registry);
+    if (reg.ok) {
+      registry = reg.value;
+      money.seniorMortgage = mortgageTotal(reg.value);
+    } else {
+      Object.assign(errors, reg.errors);
+      money.seniorMortgage = null;
     }
   }
 
@@ -527,10 +541,99 @@ export function validateProperty(input, prev = null) {
     contractDate: dates.contractDate,
     moveInDate: dates.moveInDate,
     expiryDate: dates.expiryDate,
+    registry,
     checks: prev?.checks ? { ...prev.checks } : {},
     updatedAt: prev?.updatedAt ?? null,
   };
   return { ok: true, value, errors: {} };
+}
+
+// ---------------------------------------------------------------------------
+// 등기부 요약 입력 (을구 근저당 행, 갑구 가압류 건수, 임차권등기 여부)
+// 근저당 행의 합계가 위험비율의 '선순위 근저당 합계'가 된다. 가압류·임차권등기는 계산에 넣지 않고 경고로만 표시한다.
+// ---------------------------------------------------------------------------
+
+export const REGISTRY_LIMITS = Object.freeze({ maxMortgages: 10, maxSeizures: 20 });
+
+export function defaultRegistry() {
+  return { mortgages: [], seizureCount: 0, leaseRegistration: false };
+}
+
+/** 폼 입력을 검증한다. 빈 근저당 행은 오류(지우거나 금액을 넣으라는 뜻). 오류 키: mortgage-<행번호>, mortgages, seizureCount. */
+export function validateRegistry(input) {
+  const errors = {};
+  const rows = Array.isArray(input?.mortgages) ? input.mortgages : [];
+  if (rows.length > REGISTRY_LIMITS.maxMortgages) {
+    errors.mortgages = `근저당은 ${REGISTRY_LIMITS.maxMortgages}건까지 입력할 수 있어요.`;
+  }
+  const mortgages = [];
+  rows.slice(0, REGISTRY_LIMITS.maxMortgages).forEach((raw, i) => {
+    const label = `근저당 ${i + 1}`;
+    const parsed = parseWon(raw);
+    if (!parsed.ok) errors[`mortgage-${i}`] = `${label}: ${parsed.error}`;
+    else if (parsed.value === null || parsed.value === 0) errors[`mortgage-${i}`] = `${label}: 채권최고액을 입력하거나 이 행을 지워 주세요.`;
+    else mortgages.push(parsed.value);
+  });
+
+  const seizureRaw = trimmedString(input?.seizureCount);
+  let seizureCount = 0;
+  if (seizureRaw !== '') {
+    if (!/^\d+$/.test(seizureRaw)) errors.seizureCount = '압류·가압류 건수는 0 이상의 정수로 입력해주세요.';
+    else if (Number(seizureRaw) > REGISTRY_LIMITS.maxSeizures) errors.seizureCount = `${REGISTRY_LIMITS.maxSeizures}건 이하로 입력해주세요.`;
+    else seizureCount = Number(seizureRaw);
+  }
+
+  if (Object.keys(errors).length) return { ok: false, value: null, errors };
+  return {
+    ok: true,
+    value: { mortgages, seizureCount, leaseRegistration: input?.leaseRegistration === true },
+    errors: {},
+  };
+}
+
+/** 저장된 등기부 요약을 정규화한다. 깨진 값은 버린다. */
+export function normalizeRegistry(raw) {
+  if (!raw || typeof raw !== 'object') return defaultRegistry();
+  const mortgages = Array.isArray(raw.mortgages)
+    ? raw.mortgages
+      .slice(0, REGISTRY_LIMITS.maxMortgages)
+      .filter((v) => Number.isSafeInteger(v) && v > 0 && v <= CONSTANTS.maxWon)
+    : [];
+  const seizureCount = Number.isSafeInteger(raw.seizureCount) && raw.seizureCount >= 0 && raw.seizureCount <= REGISTRY_LIMITS.maxSeizures
+    ? raw.seizureCount
+    : 0;
+  return { mortgages, seizureCount, leaseRegistration: raw.leaseRegistration === true };
+}
+
+export function mortgageTotal(reg) {
+  return normalizeRegistry(reg).mortgages.reduce((sum, v) => sum + v, 0);
+}
+
+/** 화면 표시용 요약과 경고 목록. 경고 문구에는 모두 '확인 필요'를 붙인다. */
+export function summarizeRegistry(reg) {
+  const r = normalizeRegistry(reg);
+  const warnings = [];
+  if (r.seizureCount > 0) {
+    warnings.push({
+      key: 'seizure',
+      tone: 'danger',
+      text: `등기부에 압류·가압류 ${r.seizureCount}건이 있다고 입력됐어요. 계약 전에 원인과 해제 여부를 확인하세요. (확인 필요)`,
+    });
+  }
+  if (r.leaseRegistration) {
+    warnings.push({
+      key: 'leaseRegistration',
+      tone: 'caution',
+      text: '임차권등기가 있어요. 이미 나간 임차인이 보증금을 받지 못해 등기하는 경우가 많다는 일반 설명입니다. 등기 순위와 반환 상황을 확인하세요. (확인 필요)',
+    });
+  }
+  return {
+    mortgageTotal: r.mortgages.reduce((sum, v) => sum + v, 0),
+    mortgageCount: r.mortgages.length,
+    seizureCount: r.seizureCount,
+    leaseRegistration: r.leaseRegistration,
+    warnings,
+  };
 }
 
 /** 설정 값 검증. 낙찰가율 1~100%, 공시가격 비율 50~300%. */
@@ -738,7 +841,12 @@ export function normalizeProperty(item) {
       moveInDate: item.moveInDate ?? '',
       expiryDate: item.expiryDate ?? '',
     },
-    { id: item.id, checks: sanitizeChecks(item.checks), updatedAt: typeof item.updatedAt === 'string' ? item.updatedAt : null },
+    {
+      id: item.id,
+      checks: sanitizeChecks(item.checks),
+      updatedAt: typeof item.updatedAt === 'string' ? item.updatedAt : null,
+      registry: normalizeRegistry(item.registry),
+    },
   );
   if (!checked.ok) return null;
   return { ...checked.value, id: item.id };

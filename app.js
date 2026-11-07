@@ -5,6 +5,7 @@ import {
   formatKoreanDate, diffDays, buildTimeline, renewalWindow, buildIcs, toCsv, summaryRows,
   validateProperty, validateSettings, toggleCheck, stageProgress, overallProgress,
   loadData, saveData, buildBackup, parseBackup, defaultData, makeId, toYmd, STORAGE_KEY,
+  normalizeRegistry, defaultRegistry, summarizeRegistry, REGISTRY_LIMITS,
 } from './logic.js';
 import {
   AI_KEY_STORAGE, isPlausibleKey, buildAdvicePayload, requestAdvice, fallbackAdvice,
@@ -175,7 +176,8 @@ function selectProperty(id) {
 // ---------------------------------------------------------------------------
 // 편집 폼
 // ---------------------------------------------------------------------------
-const MONEY_FIELDS = ['market', 'deposit', 'seniorMortgage', 'seniorTenant', 'publicPrice', 'monthlyRent'];
+// 선순위 근저당은 등기부 행 목록에서 합계로 계산하므로 여기 목록에 두지 않는다.
+const MONEY_FIELDS = ['market', 'deposit', 'seniorTenant', 'publicPrice', 'monthlyRent'];
 const FORM_FIELDS = ['name', 'address', 'type', 'lease', ...MONEY_FIELDS, 'contractDate', 'moveInDate', 'expiryDate', 'memo'];
 
 function openEditor(p) {
@@ -190,6 +192,13 @@ function openEditor(p) {
     if (MONEY_FIELDS.includes(key)) input.value = value === null || value === undefined ? '' : String(value);
     else input.value = value ?? (key === 'type' ? 'apt' : key === 'lease' ? 'jeonse' : '');
   }
+  const reg = p ? normalizeRegistry(p.registry) : defaultRegistry();
+  // 등기부 행 정보가 없는 예전 데이터는 합계를 한 행으로 옮겨 보여 준다.
+  let rows = reg.mortgages.map(String);
+  if (p && rows.length === 0 && p.seniorMortgage > 0) rows = [String(p.seniorMortgage)];
+  renderMortgageRows(rows);
+  $('#f-seizureCount').value = reg.seizureCount ? String(reg.seizureCount) : '';
+  $('#f-leaseRegistration').checked = reg.leaseRegistration;
   clearFormErrors();
   for (const key of MONEY_FIELDS) updatePreview(key);
   $('#editor').hidden = false;
@@ -215,12 +224,79 @@ function showFormErrors(errors) {
   for (const [key, message] of Object.entries(errors)) {
     const err = document.getElementById(`err-${key}`);
     if (err) err.textContent = message;
-    const input = $('#property-form').elements.namedItem(key);
+    const input = inputFor(key);
     if (input) input.setAttribute('aria-invalid', 'true');
   }
   const first = Object.keys(errors)[0];
-  if (first) $('#property-form').elements.namedItem(first)?.focus();
+  if (first) inputFor(first)?.focus();
   $('#form-status').textContent = '입력 내용을 확인해 주세요.';
+}
+
+/** 오류 키 → 입력 칸. 근저당 행(mortgage-N)은 행 입력 id로 찾는다. */
+function inputFor(key) {
+  if (key.startsWith('mortgage-')) return document.getElementById(`f-${key}`);
+  return $('#property-form').elements.namedItem(key);
+}
+
+// ---------------------------------------------------------------------------
+// 등기부 근저당 행
+// ---------------------------------------------------------------------------
+function renderMortgageRows(values) {
+  const list = clear($('#reg-mortgages'));
+  values.forEach((value, i) => {
+    const input = el('input', {
+      id: `f-mortgage-${i}`,
+      type: 'text',
+      inputmode: 'numeric',
+      autocomplete: 'off',
+      value,
+      'data-mortgage': String(i),
+      'aria-label': `근저당 ${i + 1} 채권최고액 (원)`,
+      placeholder: '예: 120000000',
+      'aria-describedby': `prev-mortgage-${i} err-mortgage-${i}`,
+      oninput: () => updateMortgagePreview(i),
+    });
+    const remove = el('button', {
+      type: 'button', class: 'btn btn-ghost btn-sm', text: '행 삭제',
+      'aria-label': `근저당 ${i + 1} 행 삭제`,
+      onclick: () => {
+        const rest = readMortgageValues().filter((_, idx) => idx !== i);
+        renderMortgageRows(rest);
+        $('#add-mortgage').focus();
+      },
+    });
+    list.append(el('div', { class: 'mortgage-row' }, [
+      el('div', { class: 'mortgage-main' }, [
+        el('label', { for: `f-mortgage-${i}`, class: 'mortgage-label', text: `근저당 ${i + 1}` }),
+        input,
+        el('p', { class: 'preview', id: `prev-mortgage-${i}`, 'aria-live': 'polite' }),
+        el('p', { class: 'error', id: `err-mortgage-${i}`, 'aria-live': 'polite' }),
+      ]),
+      remove,
+    ]));
+    updateMortgagePreview(i);
+  });
+  $('#add-mortgage').disabled = values.length >= REGISTRY_LIMITS.maxMortgages;
+}
+
+function readMortgageValues() {
+  return [...document.querySelectorAll('#reg-mortgages input[data-mortgage]')].map((input) => input.value);
+}
+
+function updateMortgagePreview(i) {
+  const input = document.getElementById(`f-mortgage-${i}`);
+  const node = document.getElementById(`prev-mortgage-${i}`);
+  if (!input || !node) return;
+  const parsed = parseWon(input.value);
+  node.textContent = parsed.ok && parsed.value !== null ? `= ${formatKoreanWon(parsed.value)}` : '';
+}
+
+function readRegistry() {
+  return {
+    mortgages: readMortgageValues(),
+    seizureCount: $('#f-seizureCount').value,
+    leaseRegistration: $('#f-leaseRegistration').checked,
+  };
 }
 
 function updatePreview(key) {
@@ -247,7 +323,7 @@ function submitForm(event) {
   event.preventDefault();
   clearFormErrors();
   const prev = state.mode === 'edit' ? selectedProperty() : null;
-  const result = validateProperty(readForm(), prev);
+  const result = validateProperty({ ...readForm(), registry: readRegistry() }, prev);
   if (!result.ok) {
     showFormErrors(result.errors);
     return;
@@ -412,6 +488,8 @@ function renderAnalysis(panel, p) {
     el('p', { class: 'source', text: `등급 구간: 70% 이하 안전 · 80% 이하 주의 · 90% 이하 위험 · 90% 초과 매우 위험. ${CONSTANTS.riskBandsSource}` }),
   ]));
 
+  panel.append(registryCard(p));
+
   // 시나리오
   const rows = [
     el('tr', {}, [el('th', { scope: 'row', text: '현재 시세' }), el('td', { class: 'num', text: formatWon(p.market) }), el('td', { class: 'num', text: formatPct(a.ratioPct) }), el('td', { text: a.band.label })]),
@@ -480,6 +558,22 @@ function renderAnalysis(panel, p) {
   panel.append(renderAiBox(p, a));
 
   panel.append(el('p', { class: 'note-warn', style: 'margin-top:1rem', text: '이 결과는 입력값 기준의 참고 계산입니다. 보장된 안전이 아니며 법률·세무·재무 자문이 아닙니다. 등기부와 임대인 정보를 직접 확인하세요.' }));
+}
+
+function registryCard(p) {
+  const s = summarizeRegistry(p.registry);
+  const countText = s.mortgageCount > 0
+    ? `선순위 근저당 ${s.mortgageCount}건 · 합계 ${formatKoreanWon(p.seniorMortgage)}`
+    : `선순위 근저당 합계 ${formatKoreanWon(p.seniorMortgage)} (건별 금액 미입력)`;
+  const items = s.warnings.length
+    ? s.warnings.map((w) => el('li', { class: `reg-warn ${toneClass({ tone: w.tone })}`, text: w.text }))
+    : [el('li', { class: 'reg-ok', text: '입력된 범위에서 가압류·임차권등기 경고는 없어요. 등기부 원본은 직접 확인하세요.' })];
+  return el('section', { class: 'subcard', style: 'margin-top:1rem', 'aria-labelledby': 'reg-card-title' }, [
+    el('h4', { id: 'reg-card-title', text: '등기부 요약' }),
+    el('p', { text: countText }),
+    el('ul', { class: 'reg-list' }, items),
+    el('p', { class: 'source', text: '근저당은 채권최고액 기준이며 실제 대출잔액과 다를 수 있어요. 가압류·임차권등기는 계산에 넣지 않고 경고로만 보여 줍니다.' }),
+  ]);
 }
 
 // ---------------------------------------------------------------------------
@@ -949,6 +1043,12 @@ function init() {
   $('#new-btn').addEventListener('click', () => openEditor(null));
   $('#cancel-btn').addEventListener('click', closeEditor);
   $('#property-form').addEventListener('submit', submitForm);
+  $('#add-mortgage').addEventListener('click', () => {
+    const rows = readMortgageValues();
+    if (rows.length >= REGISTRY_LIMITS.maxMortgages) return;
+    renderMortgageRows([...rows, '']);
+    document.getElementById(`f-mortgage-${rows.length}`)?.focus();
+  });
   for (const key of MONEY_FIELDS) {
     const input = $('#property-form').elements.namedItem(key);
     input.addEventListener('input', () => updatePreview(key));
