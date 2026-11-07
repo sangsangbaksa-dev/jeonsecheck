@@ -349,6 +349,48 @@ export function buildTimeline(p) {
 }
 
 // ---------------------------------------------------------------------------
+// 일정 상태 · 알림 (오늘 기준은 호출 측이 넘긴다. 테스트에서 고정 가능)
+// ---------------------------------------------------------------------------
+
+/** 일정 파일에 넣을 알림 선행 일수. 기본 1일. */
+export const REMINDER_LEAD_DAYS = Object.freeze([1, 7, 30]);
+
+/** 날짜 기준 상태: 'past'(지남) | 'today' | 'upcoming'(예정). */
+export function timelineStatus(date, today) {
+  const diff = diffDays(today, date);
+  if (diff === 0) return 'today';
+  return diff > 0 ? 'upcoming' : 'past';
+}
+
+/** 'D-3', '오늘', '2일 지남' 같은 표시 문구. */
+export function dDayLabel(date, today) {
+  const diff = diffDays(today, date);
+  if (diff === 0) return '오늘';
+  if (diff > 0) return `D-${diff}`;
+  return `${Math.abs(diff)}일 지남`;
+}
+
+/** 오늘 이후(오늘 포함) 가장 가까운 일정. 없으면 null. events는 날짜 오름차순이어야 한다. */
+export function nextEvent(events, today) {
+  return events.find((e) => e.date >= today) ?? null;
+}
+
+/**
+ * 알림 예정일과 상태. 알림일이 오늘보다 앞이면 'passed'(이미 지나 알림이 울리지 않음).
+ * leadDays가 목록에 없으면 1일로 본다.
+ */
+export function reminderFor(date, today, leadDays = 1) {
+  const lead = REMINDER_LEAD_DAYS.includes(leadDays) ? leadDays : 1;
+  const when = addDays(date, -lead);
+  const diff = diffDays(today, when); // 알림일 - 오늘
+  let status;
+  if (diff < 0) status = 'passed';
+  else if (diff === 0) status = 'today';
+  else status = 'upcoming';
+  return { leadDays: lead, date: when, status };
+}
+
+// ---------------------------------------------------------------------------
 // ICS (all-day 이벤트, RFC 5545)
 // ---------------------------------------------------------------------------
 
@@ -392,7 +434,8 @@ function icsDate(ymd) {
  * events: { uid, title, date, description } (date는 'YYYY-MM-DD')
  * stamp: 'YYYYMMDDTHHMMSSZ' (테스트를 위해 주입 가능)
  */
-export function buildIcs(events, stamp) {
+export function buildIcs(events, stamp, leadDays = 1) {
+  const lead = REMINDER_LEAD_DAYS.includes(leadDays) ? leadDays : 1;
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
@@ -402,6 +445,7 @@ export function buildIcs(events, stamp) {
   ];
   for (const ev of events) {
     const next = addDays(ev.date, 1);
+    const alarmText = lead === 1 ? `내일: ${ev.title}` : `${lead}일 뒤: ${ev.title}`;
     lines.push(
       'BEGIN:VEVENT',
       `UID:${escapeIcsText(ev.uid)}@jeonsecheck`,
@@ -411,9 +455,9 @@ export function buildIcs(events, stamp) {
       `SUMMARY:${escapeIcsText(ev.title)}`,
       `DESCRIPTION:${escapeIcsText(ev.description || '')}`,
       'BEGIN:VALARM',
-      'TRIGGER:-P1D',
+      `TRIGGER:-P${lead}D`,
       'ACTION:DISPLAY',
-      `DESCRIPTION:${escapeIcsText('내일: ' + ev.title)}`,
+      `DESCRIPTION:${escapeIcsText(alarmText)}`,
       'END:VALARM',
       'END:VEVENT',
     );

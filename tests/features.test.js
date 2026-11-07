@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   validateProperty, validateRegistry, normalizeRegistry, normalizeProperty, mortgageTotal,
   summarizeRegistry, defaultRegistry, REGISTRY_LIMITS, normalizeData, buildBackup, parseBackup, defaultData,
+  timelineStatus, dDayLabel, nextEvent, reminderFor, buildIcs, buildTimeline, REMINDER_LEAD_DAYS,
 } from '../logic.js';
 
 const goodBase = {
@@ -119,5 +120,76 @@ describe('등기부 요약 경고', () => {
   });
   test('깨끗한 등기부는 경고가 없다', () => {
     assert.deepEqual(summarizeRegistry(defaultRegistry()).warnings, []);
+  });
+});
+
+describe('일정 상태와 D-day', () => {
+  test('지남 · 오늘 · 예정 구분', () => {
+    assert.equal(timelineStatus('2026-11-06', '2026-11-07'), 'past');
+    assert.equal(timelineStatus('2026-11-07', '2026-11-07'), 'today');
+    assert.equal(timelineStatus('2026-11-08', '2026-11-07'), 'upcoming');
+  });
+  test('D-day 문구', () => {
+    assert.equal(dDayLabel('2026-11-07', '2026-11-07'), '오늘');
+    assert.equal(dDayLabel('2026-11-10', '2026-11-07'), 'D-3');
+    assert.equal(dDayLabel('2026-11-05', '2026-11-07'), '2일 지남');
+  });
+  test('다음 일정은 오늘 이후 가장 가까운 것 (오늘 포함)', () => {
+    const events = [
+      { key: 'a', date: '2026-01-01' },
+      { key: 'b', date: '2026-11-07' },
+      { key: 'c', date: '2027-01-01' },
+    ];
+    assert.equal(nextEvent(events, '2026-11-07').key, 'b');
+    assert.equal(nextEvent(events, '2026-11-08').key, 'c');
+    assert.equal(nextEvent(events, '2027-02-01'), null);
+  });
+});
+
+describe('알림 예정일', () => {
+  test('기본 1일 전, 7일·30일 선택 가능', () => {
+    assert.deepEqual(REMINDER_LEAD_DAYS, [1, 7, 30]);
+    assert.deepEqual(reminderFor('2028-03-15', '2026-11-07', 7), { leadDays: 7, date: '2028-03-08', status: 'upcoming' });
+    assert.equal(reminderFor('2028-03-15', '2026-11-07').leadDays, 1);
+  });
+  test('알림일이 지났으면 passed, 당일이면 today', () => {
+    assert.equal(reminderFor('2026-11-08', '2026-11-07', 7).status, 'passed');
+    assert.equal(reminderFor('2026-11-14', '2026-11-07', 7).status, 'today');
+    assert.equal(reminderFor('2026-11-14', '2026-11-07', 7).date, '2026-11-07');
+  });
+  test('목록에 없는 선행 일수는 1일로 본다', () => {
+    assert.equal(reminderFor('2026-11-10', '2026-11-07', 3).leadDays, 1);
+  });
+  test('30일 선행은 월말·연말 경계를 넘긴다', () => {
+    assert.equal(reminderFor('2027-01-10', '2026-11-07', 30).date, '2026-12-11');
+  });
+});
+
+describe('ICS 알림 선행 일수', () => {
+  const ev = [{ uid: 'p1-expiry', title: '만기일', date: '2028-03-15', description: '' }];
+  test('기본값은 1일 전 알림 (기존 동작)', () => {
+    const ics = buildIcs(ev, '20261107T000000Z');
+    assert.ok(ics.includes('TRIGGER:-P1D'));
+    assert.ok(ics.includes('DESCRIPTION:내일: 만기일'));
+  });
+  test('7일 전 선택 시 트리거와 문구가 바뀐다', () => {
+    const ics = buildIcs(ev, '20261107T000000Z', 7);
+    assert.ok(ics.includes('TRIGGER:-P7D'));
+    assert.ok(ics.includes('DESCRIPTION:7일 뒤: 만기일'));
+    assert.ok(!ics.includes('TRIGGER:-P1D'));
+  });
+  test('허용되지 않은 값은 1일로 대체', () => {
+    assert.ok(buildIcs(ev, '20261107T000000Z', 2).includes('TRIGGER:-P1D'));
+  });
+});
+
+describe('타임라인 구성', () => {
+  test('계약일만 있으면 만기 추정 일정이 생기고 날짜 순서가 맞다', () => {
+    const events = buildTimeline({ contractDate: '2026-03-01', moveInDate: '2026-03-02' });
+    const keys = events.map((e) => e.key);
+    assert.equal(keys[0], 'contract');
+    assert.ok(keys.includes('expiry'));
+    const dates = events.map((e) => e.date);
+    assert.deepEqual([...dates].sort(), dates);
   });
 });

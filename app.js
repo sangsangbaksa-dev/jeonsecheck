@@ -6,6 +6,7 @@ import {
   validateProperty, validateSettings, toggleCheck, stageProgress, overallProgress,
   loadData, saveData, buildBackup, parseBackup, defaultData, makeId, toYmd, STORAGE_KEY,
   normalizeRegistry, defaultRegistry, summarizeRegistry, REGISTRY_LIMITS,
+  timelineStatus, dDayLabel, nextEvent, reminderFor, REMINDER_LEAD_DAYS,
 } from './logic.js';
 import {
   AI_KEY_STORAGE, isPlausibleKey, buildAdvicePayload, requestAdvice, fallbackAdvice,
@@ -89,6 +90,7 @@ const state = {
   mode: 'view', // view | edit | new
   compare: [], // 최대 5개 물건 id
   ai: { busy: false, result: null, mode: null, error: null },
+  leadDays: 1, // 일정 파일 알림 선행 일수 (저장하지 않음)
 };
 
 function persist() {
@@ -760,13 +762,6 @@ function renderChecklist(panel, p) {
 // ---------------------------------------------------------------------------
 // 날짜·일정 탭
 // ---------------------------------------------------------------------------
-function dDayText(date) {
-  const diff = diffDays(todayYmd(), date);
-  if (diff === 0) return '오늘';
-  if (diff > 0) return `D-${diff}`;
-  return `${Math.abs(diff)}일 지남`;
-}
-
 function renderTimeline(panel, p) {
   if (!p) return needProperty(panel);
   panel.append(el('h3', { class: 'panel-title', text: '날짜·일정' }));
@@ -777,6 +772,18 @@ function renderTimeline(panel, p) {
     return;
   }
 
+  const today = todayYmd();
+  const next = nextEvent(events, today);
+  panel.append(el('div', { class: 'next-up' }, [
+    el('span', { class: 'next-label', text: '다음 일정' }),
+    next
+      ? el('span', { class: 'next-body' }, [
+        el('strong', { text: next.title }),
+        document.createTextNode(` · ${formatKoreanDate(next.date)} (${dDayLabel(next.date, today)})`),
+      ])
+      : el('span', { class: 'next-body', text: '오늘 이후 남은 일정이 없어요.' }),
+  ]));
+
   const hasExpiry = events.some((e) => e.key === 'expiry');
   if (hasExpiry) {
     const w = renewalWindow(events.find((e) => e.key === 'expiry').date);
@@ -786,19 +793,42 @@ function renderTimeline(panel, p) {
     panel.append(el('p', { class: 'source', text: '만기일을 입력하지 않아 계약일 + 24개월로 추정했습니다. 계약서의 실제 만기일로 수정하세요.' }));
   }
 
+  // 알림 선행 일수 (일정 파일과 화면 알림일에 함께 쓴다)
+  const leadSelect = el('select', {
+    id: 'lead-days',
+    'aria-describedby': 'lead-help',
+    onchange: (e) => {
+      state.leadDays = Number(e.target.value);
+      renderPanel();
+    },
+  }, REMINDER_LEAD_DAYS.map((d) => el('option', { value: d, selected: d === state.leadDays ? true : null, text: `${d}일 전` })));
+  panel.append(el('div', { class: 'lead-row' }, [
+    el('label', { for: 'lead-days', text: '알림 시점' }),
+    leadSelect,
+    el('p', { class: 'hint', id: 'lead-help', text: '선택한 날짜 전에 알림이 울리도록 일정 파일을 만듭니다. 알림일은 아래 목록에도 표시됩니다.' }),
+  ]));
+
   const list = el('ol', { class: 'timeline', 'aria-label': '날짜 목록' });
   for (const e of events) {
-    list.append(el('li', {}, [
-      el('div', {}, [
+    const status = timelineStatus(e.date, today);
+    const r = reminderFor(e.date, today, state.leadDays);
+    const reminderText = {
+      passed: '알림일이 지났어요',
+      today: '오늘 알림',
+      upcoming: '알림 예정',
+    }[r.status];
+    list.append(el('li', { class: `tl-item tl-${status}` }, [
+      el('div', { class: 'tl-when' }, [
         el('span', { class: 'tl-date', text: formatKoreanDate(e.date) }),
-        el('span', { class: 'tl-dday', text: dDayText(e.date) }),
+        el('span', { class: 'tl-dday', text: dDayLabel(e.date, today) }),
       ]),
-      el('div', {}, [
-        el('p', { class: 'tl-title', style: 'margin:0' }, [
+      el('div', { class: 'tl-body' }, [
+        el('p', { class: 'tl-title' }, [
           document.createTextNode(e.title),
           e.estimated ? el('span', { class: 'tag-est', text: '추정' }) : null,
         ]),
         el('p', { class: 'tl-note', text: e.note }),
+        el('p', { class: `tl-remind tl-remind-${r.status}`, text: `알림 ${formatKoreanDate(r.date)} · ${reminderText}` }),
       ]),
     ]));
   }
@@ -816,8 +846,8 @@ function renderTimeline(panel, p) {
           description: `${e.note}${e.estimated ? ' (추정 날짜)' : ''}. 참고용 일정이며 법률 자문이 아닙니다.`,
         }));
         const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
-        download(`${safeFileName(cur.name)}-일정.ics`, buildIcs(evs, stamp), 'text/calendar');
-        toast('일정 파일을 내려받았어요. 캘린더 앱에서 여세요.');
+        download(`${safeFileName(cur.name)}-일정.ics`, buildIcs(evs, stamp, state.leadDays), 'text/calendar');
+        toast(`일정 파일을 내려받았어요. ${state.leadDays}일 전 알림이 들어 있어요.`);
       },
     }),
   ]));
