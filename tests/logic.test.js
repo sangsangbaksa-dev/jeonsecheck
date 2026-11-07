@@ -510,3 +510,52 @@ describe('요약 CSV 행과 타임라인 편의', () => {
     assert.ok(CLAUSES.every((c) => c.text.length > 20));
   });
 });
+
+// 안전 구간 보증금 상한 (safeDepositCeiling)
+import { safeDepositCeiling, analyzeProperty as analyzeForCeiling } from '../logic.js';
+describe('안전 구간 보증금 상한', () => {
+  const base = { market: 300000000, deposit: 200000000, seniorMortgage: 50000000, seniorTenant: 0 };
+
+  test('70% 경계값에 정확히 맞는 보증금을 상한으로 돌려준다', () => {
+    const r = safeDepositCeiling(base);
+    assert.equal(r.ceiling, 160000000); // (5천만 + 1억6천만) / 3억 = 70%
+    assert.equal(r.reduceBy, 40000000);
+    assert.equal(r.feasible, true);
+    // 상한 그대로는 안전, 1원 올리면 주의 (분석 함수와 같은 판정)
+    assert.equal(analyzeForCeiling({ ...base, deposit: r.ceiling }).band.label, '안전');
+    assert.equal(analyzeForCeiling({ ...base, deposit: r.ceiling + 1 }).band.label, '주의');
+  });
+
+  test('시세 하락 가정에서는 상한이 낮아진다', () => {
+    const r = safeDepositCeiling(base, { dropPct: 10 });
+    assert.equal(r.ceiling, 139000000); // 2억7천 * 70% - 5천만
+    assert.equal(r.reduceBy, 61000000);
+  });
+
+  test('이미 안전한 보증금이면 줄일 금액은 0이다', () => {
+    const r = safeDepositCeiling({ ...base, deposit: 100000000 });
+    assert.equal(r.reduceBy, 0);
+    assert.ok(r.ceiling > 100000000);
+  });
+
+  test('선순위 채권만으로 구간을 넘으면 상한 0, feasible false', () => {
+    const r = safeDepositCeiling({ market: 100000000, deposit: 10, seniorMortgage: 80000000, seniorTenant: 0 });
+    assert.equal(r.ceiling, 0);
+    assert.equal(r.feasible, false);
+    assert.equal(r.reduceBy, 10);
+  });
+
+  test('잘못된 입력은 null을 돌려준다', () => {
+    assert.equal(safeDepositCeiling(null), null);
+    assert.equal(safeDepositCeiling({ ...base, deposit: -1 }), null);
+    assert.equal(safeDepositCeiling({ ...base, market: NaN }), null);
+    assert.equal(safeDepositCeiling(base, { dropPct: 100 }), null);
+    assert.equal(safeDepositCeiling(base, { maxPct: 0 }), null);
+  });
+
+  test('시세 0원이면 상한은 0이고 줄일 금액은 보증금 전액이다', () => {
+    const r = safeDepositCeiling({ ...base, market: 0 });
+    assert.equal(r.ceiling, 0);
+    assert.equal(r.reduceBy, base.deposit);
+  });
+});

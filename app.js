@@ -7,7 +7,7 @@ import {
   loadData, saveData, buildBackup, parseBackup, defaultData, makeId, toYmd, STORAGE_KEY,
   normalizeRegistry, defaultRegistry, summarizeRegistry, REGISTRY_LIMITS,
   timelineStatus, dDayLabel, nextEvent, reminderFor, REMINDER_LEAD_DAYS, rankSafest, checklistPrintModel,
-  explainRiskNumbers,
+  explainRiskNumbers, safeDepositCeiling,
 } from './logic.js';
 import {
   AI_KEY_STORAGE, isPlausibleKey, buildAdvicePayload, requestAdvice, fallbackAdvice,
@@ -515,6 +515,27 @@ function renderAnalysis(panel, p) {
     ]),
     el('p', { class: 'source', text: CONSTANTS.scenarioSource }),
   ]));
+
+  // 안전 구간을 유지하는 보증금 상한 (역산, 참고용)
+  const ceilingLine = (label, r) => {
+    let text;
+    if (!r.feasible) text = '선순위 채권만으로 안전 구간(70% 이하)을 넘어요. 보증금을 낮춰도 안전 구간에 들어가지 않아요.';
+    else if (r.reduceBy === 0) text = `현재 보증금은 상한(${formatKoreanWon(r.ceiling)}) 이하라 안전 구간 안에 있어요.`;
+    else text = `보증금을 ${formatKoreanWon(r.reduceBy)} 낮춰 ${formatKoreanWon(r.ceiling)} 이하로 맞추면 안전 구간(70% 이하)에 들어와요.`;
+    return el('li', {}, [el('strong', { text: `${label}: ` }), document.createTextNode(text)]);
+  };
+  const now = safeDepositCeiling(p, { dropPct: 0 });
+  const down = safeDepositCeiling(p, { dropPct: CONSTANTS.scenarioDropPcts[0] });
+  if (now && down) {
+    panel.append(el('div', { class: 'subcard', style: 'margin-top:1rem' }, [
+      el('h4', { text: '안전 구간 보증금 상한' }),
+      el('ul', { class: 'plain-list' }, [
+        ceilingLine('현재 시세 기준', now),
+        ceilingLine(`시세 ${CONSTANTS.scenarioDropPcts[0]}% 하락 가정`, down),
+      ]),
+      el('p', { class: 'source', text: `역산 값은 분석과 같은 식과 같은 경계(70% 이하)를 씁니다. 실제 협상 기준이 아닙니다. ${CONSTANTS.riskBandsSource}` }),
+    ]));
+  }
 
   // 경매 노출 + 공시가격 참고
   const auction = a.auction;

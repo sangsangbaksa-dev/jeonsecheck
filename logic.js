@@ -194,6 +194,33 @@ export function analyzeProperty(p, settings = {}) {
   return out;
 }
 
+/**
+ * 안전 구간(기본 70% 이하)을 유지하려면 내 보증금을 얼마까지 낮춰야 하는지 역산한다.
+ * 위험비율 = (선순위 근저당 + 선순위 임차 + 내 보증금) / 시세 (분석과 같은 식, 같은 정수 비교).
+ * dropPct가 있으면 시세가 그만큼 떨어진 가정에서 계산한다.
+ * 반환: { ceiling, reduceBy, feasible, maxPct, dropPct }
+ *   ceiling  : 보증금 상한(원). 선순위 채권만으로도 구간을 넘으면 0.
+ *   reduceBy : 현재 보증금에서 줄여야 할 금액(0 이상). 이미 안전하면 0.
+ *   feasible : 보증금을 0으로 줄이면 구간 안에 들어오는지 여부.
+ * 입력이 잘못되면 null을 돌려준다.
+ */
+export function safeDepositCeiling(p, { maxPct = CONSTANTS.riskBands[0].maxPct, dropPct = 0 } = {}) {
+  if (!p) return null;
+  const { market, deposit, seniorMortgage, seniorTenant } = p;
+  const values = [market, deposit, seniorMortgage, seniorTenant];
+  if (!values.every(isWholeNonNeg)) return null;
+  if (!Number.isFinite(maxPct) || maxPct <= 0) return null;
+  if (!Number.isSafeInteger(dropPct) || dropPct < 0 || dropPct >= 100) return null;
+  // 분석 함수와 같은 정수 연산: T * 10000 <= maxPct * M * (100 - d)
+  const allowedTotal = (BigInt(maxPct) * BigInt(market) * BigInt(100 - dropPct)) / 10000n;
+  const senior = BigInt(seniorMortgage) + BigInt(seniorTenant);
+  const room = allowedTotal - senior;
+  const ceiling = room > 0n ? Number(room) : 0;
+  const feasible = room >= 0n;
+  const reduceBy = Math.max(0, deposit - ceiling);
+  return { ceiling, reduceBy, feasible, maxPct, dropPct };
+}
+
 /** 위험비율 막대 위치(0~100). 100%를 넘으면 100으로 자른다. */
 export function barPosition(ratioPct) {
   if (!Number.isFinite(ratioPct)) return 0;
