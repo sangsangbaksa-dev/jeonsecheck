@@ -1,6 +1,6 @@
 // jeonsecheck UI. 모든 사용자 데이터는 textContent로만 넣는다 (innerHTML 사용 안 함).
 import {
-  CONSTANTS, PROPERTY_TYPES, LEASE_TYPES, CHECKLIST, CLAUSES, CLAUSE_NOTICE, SUMMARY_HEADERS,
+  CONSTANTS, PROPERTY_TYPES, LEASE_TYPES, CHECKLIST, CLAUSES, CLAUSE_NOTICE, SUMMARY_HEADERS, composeClauses,
   parseWon, formatKoreanWon, formatWon, formatPct, analyzeProperty, barPosition,
   formatKoreanDate, diffDays, buildTimeline, renewalWindow, buildIcs, toCsv, summaryRows,
   validateProperty, validateSettings, toggleCheck, stageProgress, overallProgress,
@@ -91,6 +91,7 @@ const state = {
   compare: [], // 최대 5개 물건 id
   ai: { busy: false, result: null, mode: null, error: null },
   leadDays: 1, // 일정 파일 알림 선행 일수 (저장하지 않음)
+  clauseSel: [], // 특약 문구 선택 (저장하지 않음)
 };
 
 function persist() {
@@ -883,6 +884,21 @@ async function copyText(text) {
 function renderClauses(panel) {
   panel.append(el('h3', { class: 'panel-title', text: '특약 문구 라이브러리' }));
   panel.append(el('p', { class: 'note-warn', text: CLAUSE_NOTICE }));
+
+  // 여러 문구를 골라 번호 붙여 한 번에 복사 (선택 상태는 저장하지 않는다)
+  const selCount = el('span', { class: 'muted', 'aria-live': 'polite' });
+  const copySelBtn = el('button', { type: 'button', class: 'btn btn-primary btn-sm', text: '선택한 문구 복사' });
+  const refreshSel = () => {
+    selCount.textContent = `선택 ${state.clauseSel.length}개 / 전체 ${CLAUSES.length}개`;
+    copySelBtn.disabled = state.clauseSel.length === 0;
+  };
+  copySelBtn.addEventListener('click', async () => {
+    const ok = await copyText(composeClauses(state.clauseSel));
+    toast(ok ? `선택한 ${state.clauseSel.length}개 문구를 복사했어요. 계약서에 붙여 넣고 수정하세요.` : '복사하지 못했어요. 문구를 직접 선택해 복사해 주세요.');
+  });
+  refreshSel();
+  panel.append(el('div', { class: 'clause-toolbar' }, [selCount, copySelBtn]));
+
   const grid = el('div', { class: 'clause-grid' });
   for (const c of CLAUSES) {
     const btn = el('button', { type: 'button', class: 'btn btn-ghost btn-sm', text: '복사' });
@@ -892,8 +908,22 @@ function renderClauses(panel) {
       toast(ok ? '특약 문구를 복사했어요. 계약서에 붙여 넣고 수정하세요.' : '복사하지 못했어요. 문구를 직접 선택해 복사해 주세요.');
       setTimeout(() => { btn.textContent = '복사'; }, 1800);
     });
+    const check = el('input', {
+      type: 'checkbox',
+      id: `clause-${c.id}`,
+      checked: state.clauseSel.includes(c.id) ? true : null,
+      onchange: (e) => {
+        state.clauseSel = e.target.checked
+          ? [...state.clauseSel, c.id]
+          : state.clauseSel.filter((x) => x !== c.id);
+        refreshSel();
+      },
+    });
     grid.append(el('article', { class: 'clause' }, [
-      el('div', { class: 'clause-head' }, [el('span', { class: 'chip', text: '참고 예시' }), btn]),
+      el('div', { class: 'clause-head' }, [
+        el('label', { class: 'clause-check', for: `clause-${c.id}` }, [check, document.createTextNode(' 선택')]),
+        btn,
+      ]),
       el('h3', { text: c.title }),
       el('p', { text: c.text }),
     ]));

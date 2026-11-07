@@ -4,6 +4,7 @@ import {
   validateProperty, validateRegistry, normalizeRegistry, normalizeProperty, mortgageTotal,
   summarizeRegistry, defaultRegistry, REGISTRY_LIMITS, normalizeData, buildBackup, parseBackup, defaultData,
   timelineStatus, dDayLabel, nextEvent, reminderFor, buildIcs, buildTimeline, REMINDER_LEAD_DAYS,
+  CLAUSES, composeClauses,
 } from '../logic.js';
 
 const goodBase = {
@@ -191,5 +192,32 @@ describe('타임라인 구성', () => {
     assert.ok(keys.includes('expiry'));
     const dates = events.map((e) => e.date);
     assert.deepEqual([...dates].sort(), dates);
+  });
+});
+
+describe('특약 문구 라이브러리', () => {
+  test('템플릿이 11개 이상이고 id가 고유하다', () => {
+    assert.ok(CLAUSES.length >= 11);
+    assert.equal(new Set(CLAUSES.map((c) => c.id)).size, CLAUSES.length);
+  });
+  test('모든 문구에 제목과 본문이 있고 법률 결론처럼 보이는 확정 표현이 없다', () => {
+    for (const c of CLAUSES) {
+      assert.ok(c.title.length > 2, c.id);
+      assert.ok(c.text.length > 20, c.id);
+      assert.ok(!/보장한다|반드시 보호/.test(c.text), c.id);
+    }
+  });
+  test('선택한 문구를 라이브러리 순서로 번호 붙여 합친다', () => {
+    const [a, b] = [CLAUSES[3].id, CLAUSES[0].id];
+    const text = composeClauses([a, b]);
+    assert.ok(text.startsWith('1. ' + CLAUSES[0].title + '\n'));
+    assert.ok(text.includes('2. ' + CLAUSES[3].title));
+    assert.ok(text.indexOf(CLAUSES[0].title) < text.indexOf(CLAUSES[3].title));
+  });
+  test('없는 id는 무시하고, 선택이 없으면 빈 문자열', () => {
+    assert.equal(composeClauses(['nope']), '');
+    assert.equal(composeClauses([]), '');
+    assert.equal(composeClauses(undefined), '');
+    assert.equal(composeClauses([CLAUSES[1].id, 'nope']).split('\n\n').length, 1);
   });
 });

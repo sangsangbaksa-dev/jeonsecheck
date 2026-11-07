@@ -816,7 +816,37 @@ export const CLAUSES = Object.freeze([
     title: '계약갱신 조건 명시',
     text: '임차인이 주택임대차보호법상 계약갱신요구권을 행사하는 경우 임대인은 정당한 사유 없이 이를 거절하지 않으며, 갱신 시 보증금 증액 한도는 법령을 따른다.',
   },
+  {
+    id: 'simultaneous-return',
+    title: '보증금 반환과 집 비우기 동시 이행',
+    text: '임대인이 보증금을 반환하는 것과 임차인이 주택을 비우고 열쇠를 넘기는 것은 동시에 이행한다. 어느 한쪽을 먼저 요구하지 않는다.',
+  },
+  {
+    id: 'deposit-account-owner',
+    title: '보증금 이체 계좌는 임대인 명의',
+    text: '임차인은 보증금을 임대인 본인 명의의 계좌로만 이체하며, 이체 내역과 영수증을 보관한다. 제3자 명의 계좌로는 이체하지 않는다.',
+  },
+  {
+    id: 'confirm-date-cooperation',
+    title: '전입·확정일자 절차 협조',
+    text: '임대인은 잔금 지급일에 임차인이 전입신고와 확정일자 부여를 받을 수 있도록 필요한 서류와 절차에 협조한다.',
+  },
+  {
+    id: 'broker-disclosure',
+    title: '중개대상물 확인·설명 교부 확인',
+    text: '중개사는 계약 전에 등기사항증명서와 건축물대장 등 중개대상물 확인·설명 내용을 임차인에게 교부하고 설명했음을 확인한다.',
+  },
 ]);
+
+/**
+ * 선택한 특약 문구를 번호 붙여 한 덩어리로 만든다. 라이브러리 순서를 따르고, 없는 id는 무시한다.
+ * 선택이 없으면 빈 문자열.
+ */
+export function composeClauses(ids) {
+  const wanted = new Set(Array.isArray(ids) ? ids : []);
+  const picked = CLAUSES.filter((c) => wanted.has(c.id));
+  return picked.map((c, i) => `${i + 1}. ${c.title}\n${c.text}`).join('\n\n');
+}
 
 export const CLAUSE_NOTICE = '참고 예시입니다. 법률 자문이 아니며, 실제 계약에는 상황에 맞게 전문가(공인중개사·법무사·변호사)와 함께 검토하세요.';
 
