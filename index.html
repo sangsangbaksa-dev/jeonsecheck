@@ -3,28 +3,33 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>전세 보증금 안전 점검 · jeonsecheck</title>
+  <title>jeonsecheck · 전세 보증금 안전 점검</title>
   <meta name="description" content="전세·반전세 보증금을 위험비율, 점검표, 날짜 알림으로 계약 전에 점검하세요. 데이터는 이 브라우저에만 저장됩니다.">
-  <meta name="theme-color" content="#0F766E" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0B1220" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#F7F7F5" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121314" media="(prefers-color-scheme: dark)">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="ko_KR">
-  <meta property="og:title" content="전세 보증금 안전 점검 · jeonsecheck">
-  <meta property="og:description" content="깡통전세를 막기 위한 위험비율, 계약 단계별 점검표, 계약갱신·반환 날짜 알림.">
+  <meta property="og:title" content="jeonsecheck · 전세 보증금 안전 점검">
+  <meta property="og:description" content="위험비율 계산, 계약 단계별 점검표, 계약갱신·반환 날짜 알림.">
   <meta property="og:site_name" content="jeonsecheck">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230F766E'/%3E%3Cpath d='M16 33l10 10 22-25' stroke='%23fff' stroke-width='6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230F5F59'/%3E%3Cpath d='M9 17l5 5 9-11' stroke='%23fff' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <a class="skip-link" href="#app">본문으로 건너뛰기</a>
+  <a class="skip-link" href="#app" data-i18n="app.skip">본문으로 건너뛰기</a>
 
   <header class="topbar">
     <div class="wrap topbar-inner">
-      <a class="brand" href="#top" aria-label="jeonsecheck 홈">
-        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="currentColor"/><path d="M8 17l6 6 10-12" stroke="var(--accent-contrast)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <span class="brand-text"><strong>jeonsecheck</strong><small>전세 보증금 안전 점검</small></span>
+      <a class="brand" href="#top" aria-label="jeonsecheck 홈" data-i18n-aria="app.homeAria">
+        <span class="brand-name">jeonsecheck</span>
+        <span class="brand-tag" data-i18n="app.tagline">전세 보증금 안전 점검</span>
       </a>
-      <a class="btn btn-primary btn-sm" href="#app">내 물건 점검하기</a>
+      <div class="topbar-actions">
+        <label class="lang-label"><span class="sr-only" data-i18n="common.language">언어</span>
+          <select id="lang-select" class="lang-select" aria-label="언어" data-i18n-aria="common.language"></select>
+        </label>
+        <a class="btn btn-primary btn-sm" href="#app" data-i18n="app.topCta">내 물건 점검하기</a>
+      </div>
     </div>
   </header>
 
@@ -32,98 +37,79 @@
     <section class="hero">
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <p class="eyebrow">깡통전세 예방 체크리스트</p>
-          <h1>전세 보증금, 계약 전에 숫자로 점검하세요</h1>
-          <p class="lead">등기부 숫자로 위험비율을 계산하고, 계약 단계별 점검표와 계약갱신·반환 날짜를 한곳에서 관리합니다. 데이터는 이 브라우저에만 저장됩니다.</p>
+          <p class="eyebrow" data-i18n="app.heroEyebrow">깡통전세 예방 체크리스트</p>
+          <h1 data-i18n="app.heroTitle">전세 보증금, 계약 전에 숫자로 점검하세요</h1>
+          <p class="lead" data-i18n="app.heroLead">등기부 숫자로 위험비율을 계산하고, 계약 단계별 점검표와 계약갱신·반환 날짜를 한곳에서 관리합니다. 데이터는 이 브라우저에만 저장됩니다.</p>
           <div class="hero-actions">
-            <a class="btn btn-primary" href="#app">지금 점검 시작</a>
-            <a class="btn btn-ghost" href="#how">작동 방식 보기</a>
+            <a class="btn btn-primary" href="#app" data-i18n="app.heroCta">지금 점검 시작</a>
+            <a class="btn btn-ghost" href="#how" data-i18n="app.heroSecondary">작동 방식 보기</a>
           </div>
-          <p class="fine">보장된 안전을 알려주지 않습니다. 참고용 추정치이며 법률·세무·재무 자문이 아닙니다.</p>
+          <p class="fine" data-i18n="app.heroFine">보장된 안전을 알려주지 않습니다. 참고용 추정치이며 법률·세무·재무 자문이 아닙니다.</p>
         </div>
-        <div>
-          <figure class="hero-shot" aria-labelledby="shot-caption">
-            <div class="shot-bar"><strong>jeonsecheck · 위험 분석</strong><span>예시 데이터</span></div>
-            <div class="shot-body">
-              <div class="shot-list" aria-hidden="true">
-                <div class="shot-item is-on"><span class="shot-name">서초 빌라 A</span><span class="shot-sub">전세 · 주의</span></div>
-                <div class="shot-item"><span class="shot-name">역삼 오피스텔</span><span class="shot-sub">전세 · 안전</span></div>
-              </div>
-              <div class="shot-main">
-                <div class="shot-score">
-                  <div>
-                    <p class="muted" style="margin:0">위험비율</p>
-                    <div class="score-value">78.7%</div>
-                  </div>
-                  <span class="badge tone-caution">등급: 주의</span>
+
+        <figure class="shot" aria-labelledby="shot-caption">
+          <div class="shot-bar">
+            <strong data-i18n="app.shotTitle">위험 분석</strong>
+            <span data-i18n="app.shotExample">예시 데이터</span>
+          </div>
+          <div class="shot-body">
+            <ul class="shot-list" aria-hidden="true">
+              <li class="shot-item is-on"><span class="shot-name" data-i18n="app.shotItemA">서초 빌라 A</span><span class="shot-sub" data-i18n="app.shotSubA">전세 · 주의</span></li>
+              <li class="shot-item"><span class="shot-name" data-i18n="app.shotItemB">역삼 오피스텔</span><span class="shot-sub" data-i18n="app.shotSubB">전세 · 안전</span></li>
+            </ul>
+            <div class="shot-main">
+              <div class="shot-score">
+                <div>
+                  <p class="shot-label" data-i18n="app.shotRatio">위험비율</p>
+                  <p class="score-value">78.7%</p>
                 </div>
-                <div class="meter" aria-hidden="true"><div class="meter-fill tone-caution" style="width:78.7%"></div></div>
-                <dl class="shot-rows">
-                  <div><dt>선순위 근저당 (2건 합계)</dt><dd>1억 2,000만원</dd></div>
-                  <div><dt>선순위 임차보증금</dt><dd>0원</dd></div>
-                  <div><dt>내 보증금</dt><dd>2억 5,000만원</dd></div>
-                  <div><dt>배당 못 받을 수 있는 금액 (낙찰가율 80% 가정)</dt><dd>0원</dd></div>
-                </dl>
-                <p class="shot-warn">압류·가압류 1건이 입력됨 · 계약 전 확인 필요</p>
-                <p class="shot-note">확인 필요 · 기준일 2026-11</p>
+                <span class="badge tone-caution">주의</span>
               </div>
+              <div class="meter" aria-hidden="true"><div class="meter-fill tone-caution" style="width:78.7%"></div></div>
+              <dl class="shot-rows">
+                <div><dt data-i18n="app.shotRow1">선순위 근저당 (2건 합계)</dt><dd>1억 2,000만원</dd></div>
+                <div><dt data-i18n="app.shotRow2">선순위 임차보증금</dt><dd>0원</dd></div>
+                <div><dt data-i18n="app.shotRow3">내 보증금</dt><dd>2억 5,000만원</dd></div>
+                <div><dt data-i18n="app.shotRow4">배당 못 받을 수 있는 금액 (낙찰가율 80% 가정)</dt><dd>0원</dd></div>
+              </dl>
+              <p class="shot-warn" data-i18n="app.shotWarn">압류·가압류 1건이 입력됨 · 계약 전 확인 필요</p>
+              <p class="shot-note" data-i18n="app.shotNote">확인 필요 · 기준일 2026-11</p>
             </div>
-          </figure>
-          <p class="hero-shot-caption" id="shot-caption">예시 화면입니다. 실제 계산 결과가 아닙니다.</p>
-        </div>
+          </div>
+        </figure>
       </div>
+      <p class="wrap shot-caption" id="shot-caption" data-i18n="app.shotCaption">예시 화면입니다. 실제 계산 결과가 아닙니다.</p>
     </section>
 
     <section class="section" aria-labelledby="features-title">
-      <div class="wrap">
-        <h2 id="features-title" class="section-title">계약 전에 놓치기 쉬운 것들을 모았습니다</h2>
-        <div class="card-grid">
-          <article class="card">
-            <h3>위험비율과 등급</h3>
-            <p>선순위 채권과 내 보증금을 합쳐 예상 시세와 비교합니다. 시세가 10%, 20% 떨어졌을 때도 함께 봅니다. 각 숫자의 계산식과 근거도 풀어 씁니다.</p>
-          </article>
-          <article class="card">
-            <h3>등기부 요약 입력</h3>
-            <p>을구 근저당은 건별로 적고 합계를 씁니다. 가압류와 임차권등기는 계산에 넣지 않고, 계약 전에 확인할 경고로 보여 줍니다.</p>
-          </article>
-          <article class="card">
-            <h3>경매 시 노출 금액</h3>
-            <p>낙찰가율을 가정해 배당받지 못할 수 있는 보증금 규모를 보여 줍니다. 가정값은 직접 바꿀 수 있고, 단순 모델임을 함께 밝힙니다.</p>
-          </article>
-          <article class="card">
-            <h3>날짜와 알림</h3>
-            <p>다음 일정을 맨 위에 보여 주고, 계약갱신 기간과 반환 시점을 1·7·30일 전 알림이 든 캘린더 파일(.ics)로 내려받습니다.</p>
-          </article>
-          <article class="card">
-            <h3>점검표와 인쇄</h3>
-            <p>계약 전부터 퇴거까지 단계별로 체크하고, 체크 상태는 물건마다 기억합니다. 인쇄용 시트로 출력해 현장에서 들고 다닐 수 있습니다.</p>
-          </article>
-          <article class="card">
-            <h3>특약 문구와 비교</h3>
-            <p>특약 문구 11개를 골라 번호를 붙여 한 번에 복사합니다. 비교표에서는 위험비율이 가장 낮은 물건을 참고로 표시합니다.</p>
-          </article>
-        </div>
+      <div class="wrap two-col">
+        <h2 id="features-title" class="section-title" data-i18n="app.featTitle">계약 전에 놓치기 쉬운 것들을 모았습니다</h2>
+        <dl class="feature-list">
+          <div class="feature"><dt data-i18n="app.f1t">위험비율과 등급</dt><dd data-i18n="app.f1d">선순위 채권과 내 보증금을 합쳐 예상 시세와 비교합니다. 시세가 10%, 20% 떨어졌을 때도 함께 봅니다. 각 숫자의 계산식과 근거도 풀어 씁니다.</dd></div>
+          <div class="feature"><dt data-i18n="app.f2t">등기부 요약 입력</dt><dd data-i18n="app.f2d">을구 근저당은 건별로 적고 합계를 씁니다. 가압류와 임차권등기는 계산에 넣지 않고, 계약 전에 확인할 경고로 보여 줍니다.</dd></div>
+          <div class="feature"><dt data-i18n="app.f3t">경매 시 노출 금액</dt><dd data-i18n="app.f3d">낙찰가율을 가정해 배당받지 못할 수 있는 보증금 규모를 보여 줍니다. 가정값은 직접 바꿀 수 있고, 단순 모델임을 함께 밝힙니다.</dd></div>
+          <div class="feature"><dt data-i18n="app.f4t">날짜와 알림</dt><dd data-i18n="app.f4d">다음 일정을 맨 위에 보여 주고, 계약갱신 기간과 반환 시점을 1·7·30일 전 알림이 든 캘린더 파일(.ics)로 내려받습니다.</dd></div>
+          <div class="feature"><dt data-i18n="app.f5t">점검표와 인쇄</dt><dd data-i18n="app.f5d">계약 전부터 퇴거까지 단계별로 체크하고, 체크 상태는 물건마다 기억합니다. 인쇄용 시트로 출력해 현장에서 들고 다닐 수 있습니다.</dd></div>
+          <div class="feature"><dt data-i18n="app.f6t">특약 문구와 비교</dt><dd data-i18n="app.f6d">특약 문구 11개를 골라 번호를 붙여 한 번에 복사합니다. 비교표에서는 위험비율이 가장 낮은 물건을 참고로 표시합니다.</dd></div>
+        </dl>
       </div>
     </section>
 
     <section class="section section-alt" id="how" aria-labelledby="how-title">
-      <div class="wrap">
-        <h2 id="how-title" class="section-title">작동 방식은 세 단계입니다</h2>
+      <div class="wrap two-col">
+        <h2 id="how-title" class="section-title" data-i18n="app.howTitle">작동 방식은 세 단계입니다</h2>
         <ol class="steps">
           <li class="step">
-            <span class="step-num" aria-hidden="true">1</span>
-            <h3>등기·시세 숫자 입력</h3>
-            <p>예상 매매 시세, 내 보증금, 등기부 을구의 근저당 채권최고액을 적습니다. 근저당이 없으면 행을 비워 두세요.</p>
+            <h3 data-i18n="app.s1t">등기·시세 숫자 입력</h3>
+            <p data-i18n="app.s1d">예상 매매 시세, 내 보증금, 등기부 을구의 근저당 채권최고액을 적습니다. 근저당이 없으면 행을 비워 두세요.</p>
           </li>
           <li class="step">
-            <span class="step-num" aria-hidden="true">2</span>
-            <h3>위험비율 확인</h3>
-            <p>등급, 하락 시나리오, 경매 노출액을 보고 계약 조건을 다시 협상할지 판단하는 자료로 씁니다.</p>
+            <h3 data-i18n="app.s2t">위험비율 확인</h3>
+            <p data-i18n="app.s2d">등급, 하락 시나리오, 경매 노출액을 보고 계약 조건을 다시 협상할지 판단하는 자료로 씁니다.</p>
           </li>
           <li class="step">
-            <span class="step-num" aria-hidden="true">3</span>
-            <h3>점검표와 일정 관리</h3>
-            <p>체크리스트를 하나씩 끝내고, 계약갱신·반환 날짜를 캘린더에 넣어 놓칩니다.</p>
+            <h3 data-i18n="app.s3t">점검표와 일정 관리</h3>
+            <p data-i18n="app.s3d">체크리스트를 하나씩 끝내고, 계약갱신·반환 날짜를 캘린더에 넣어 놓칩니다.</p>
           </li>
         </ol>
       </div>
@@ -133,84 +119,84 @@
       <div class="wrap">
         <div class="app-head">
           <div>
-            <h2 id="app-title" class="section-title">내 물건</h2>
-            <p class="muted">물건을 추가하고 선택하면 분석과 점검표가 열립니다.</p>
+            <h2 id="app-title" class="section-title" data-i18n="app.myProps">내 물건</h2>
+            <p class="muted" data-i18n="app.propsHint">물건을 추가하고 선택하면 분석과 점검표가 열립니다.</p>
           </div>
-          <button type="button" class="btn btn-primary" id="new-btn">+ 새 물건</button>
+          <button type="button" class="btn btn-primary" id="new-btn" data-i18n="app.newProp">+ 새 물건</button>
         </div>
 
         <div class="app-grid">
-          <aside class="list-col" aria-label="물건 목록">
+          <aside class="list-col" data-i18n-aria="app.listAria" aria-label="물건 목록">
             <div id="property-list" class="property-list"></div>
-            <p id="list-empty" class="empty" hidden>아직 물건이 없어요. "새 물건"으로 첫 번째 전세 계약을 입력해 보세요.</p>
+            <p id="list-empty" class="empty" hidden data-i18n="app.listEmpty">아직 물건이 없어요. "새 물건"으로 첫 번째 전세 계약을 입력해 보세요.</p>
           </aside>
 
           <div class="main-col">
             <!-- 물건 입력 폼 -->
             <section id="editor" class="panel" aria-labelledby="editor-title" hidden>
-              <h3 id="editor-title" class="panel-title">물건 정보</h3>
+              <h3 id="editor-title" class="panel-title" data-i18n="app.newTitle">새 물건 입력</h3>
               <form id="property-form" novalidate class="form-grid">
                 <div class="field">
-                  <label for="f-name">물건 이름 <span class="req">필수</span></label>
-                  <input id="f-name" name="name" type="text" maxlength="60" autocomplete="off" placeholder="예: 서초 빌라 A">
+                  <label for="f-name"><span data-i18n="form.name">물건 이름</span> <span class="req" data-i18n="form.required">필수</span></label>
+                  <input id="f-name" name="name" type="text" maxlength="60" autocomplete="off" data-i18n-ph="ph.name" placeholder="예: 서초 빌라 A">
                   <p class="error" id="err-name" aria-live="polite"></p>
                 </div>
                 <div class="field">
-                  <label for="f-address">주소 메모 <span class="opt">선택 · AI로 전송되지 않음</span></label>
-                  <input id="f-address" name="address" type="text" maxlength="140" autocomplete="off" placeholder="예: 서초구 ○○동 (메모용)">
+                  <label for="f-address"><span data-i18n="form.address">주소 메모</span> <span class="opt" data-i18n="form.addressOpt">선택 · AI로 전송되지 않음</span></label>
+                  <input id="f-address" name="address" type="text" maxlength="140" autocomplete="off" data-i18n-ph="ph.address" placeholder="예: 서초구 ○○동 (메모용)">
                   <p class="error" id="err-address" aria-live="polite"></p>
                 </div>
                 <div class="field">
-                  <label for="f-type">주택 유형</label>
+                  <label for="f-type" data-i18n="form.type">주택 유형</label>
                   <select id="f-type" name="type">
-                    <option value="apt">아파트</option>
-                    <option value="villa">빌라·다세대</option>
-                    <option value="officetel">오피스텔</option>
-                    <option value="house">단독·다가구</option>
+                    <option value="apt" data-i18n="type.apt">아파트</option>
+                    <option value="villa" data-i18n="type.villa">빌라·다세대</option>
+                    <option value="officetel" data-i18n="type.officetel">오피스텔</option>
+                    <option value="house" data-i18n="type.house">단독·다가구</option>
                   </select>
                   <p class="error" id="err-type" aria-live="polite"></p>
                 </div>
                 <div class="field">
-                  <label for="f-lease">계약 형태</label>
+                  <label for="f-lease" data-i18n="form.lease">계약 형태</label>
                   <select id="f-lease" name="lease">
-                    <option value="jeonse">전세</option>
-                    <option value="banjeonse">반전세</option>
+                    <option value="jeonse" data-i18n="lease.jeonse">전세</option>
+                    <option value="banjeonse" data-i18n="lease.banjeonse">반전세</option>
                   </select>
                   <p class="error" id="err-lease" aria-live="polite"></p>
                 </div>
 
                 <fieldset class="field-set">
-                  <legend>금액 (원 단위, 숫자만)</legend>
+                  <legend data-i18n="form.amounts">금액 (원 단위, 숫자만)</legend>
                   <div class="money-grid">
                     <div class="field">
-                      <label for="f-market">예상 매매 시세 <span class="req">필수</span></label>
-                      <input id="f-market" name="market" type="text" inputmode="numeric" autocomplete="off" placeholder="예: 300000000" aria-describedby="prev-market hint-market">
-                      <p class="hint" id="hint-market">실제 거래가 아니라 예상 시세입니다. 0이면 비율을 계산할 수 없어요.</p>
+                      <label for="f-market"><span data-i18n="f.market">예상 매매 시세</span> <span class="req" data-i18n="form.required">필수</span></label>
+                      <input id="f-market" name="market" type="text" inputmode="numeric" autocomplete="off" data-i18n-ph="ph.market" placeholder="예: 300000000" aria-describedby="prev-market hint-market">
+                      <p class="hint" id="hint-market" data-i18n="form.marketHint">실제 거래가 아니라 예상 시세입니다. 0이면 비율을 계산할 수 없어요.</p>
                       <p class="preview" id="prev-market" aria-live="polite"></p>
                       <p class="error" id="err-market" aria-live="polite"></p>
                     </div>
                     <div class="field">
-                      <label for="f-deposit">내 보증금 <span class="req">필수</span></label>
-                      <input id="f-deposit" name="deposit" type="text" inputmode="numeric" autocomplete="off" placeholder="예: 250000000" aria-describedby="prev-deposit">
+                      <label for="f-deposit"><span data-i18n="f.deposit">내 보증금</span> <span class="req" data-i18n="form.required">필수</span></label>
+                      <input id="f-deposit" name="deposit" type="text" inputmode="numeric" autocomplete="off" data-i18n-ph="ph.deposit" placeholder="예: 250000000" aria-describedby="prev-deposit">
                       <p class="preview" id="prev-deposit" aria-live="polite"></p>
                       <p class="error" id="err-deposit" aria-live="polite"></p>
                     </div>
                     <div class="field">
-                      <label for="f-seniorTenant">선순위 임차보증금 합계 <span class="req">필수</span></label>
-                      <input id="f-seniorTenant" name="seniorTenant" type="text" inputmode="numeric" autocomplete="off" placeholder="없으면 0 (다가구에서 주로 확인)" aria-describedby="prev-seniorTenant">
+                      <label for="f-seniorTenant"><span data-i18n="f.seniorTenant">선순위 임차보증금 합계</span> <span class="req" data-i18n="form.required">필수</span></label>
+                      <input id="f-seniorTenant" name="seniorTenant" type="text" inputmode="numeric" autocomplete="off" data-i18n-ph="ph.seniorTenant" placeholder="없으면 0 (다가구에서 주로 확인)" aria-describedby="prev-seniorTenant">
                       <p class="preview" id="prev-seniorTenant" aria-live="polite"></p>
                       <p class="error" id="err-seniorTenant" aria-live="polite"></p>
                     </div>
                     <div class="field">
-                      <label for="f-publicPrice">공시가격 <span class="opt">선택</span></label>
-                      <input id="f-publicPrice" name="publicPrice" type="text" inputmode="numeric" autocomplete="off" placeholder="예: 210000000">
+                      <label for="f-publicPrice"><span data-i18n="f.publicPrice">공시가격</span> <span class="opt" data-i18n="form.optional">선택</span></label>
+                      <input id="f-publicPrice" name="publicPrice" type="text" inputmode="numeric" autocomplete="off" data-i18n-ph="ph.publicPrice" placeholder="예: 210000000">
                       <p class="preview" id="prev-publicPrice" aria-live="polite"></p>
                       <p class="error" id="err-publicPrice" aria-live="polite"></p>
                     </div>
                     <div class="field">
-                      <label for="f-monthlyRent">월세 <span class="opt">선택 · 반전세</span></label>
-                      <input id="f-monthlyRent" name="monthlyRent" type="text" inputmode="numeric" autocomplete="off" placeholder="예: 500000">
-                      <p class="hint">월세는 위험비율 계산에 넣지 않습니다.</p>
+                      <label for="f-monthlyRent"><span data-i18n="f.monthlyRent">월세</span> <span class="opt" data-i18n="form.monthlyRentOpt">선택 · 반전세</span></label>
+                      <input id="f-monthlyRent" name="monthlyRent" type="text" inputmode="numeric" autocomplete="off" data-i18n-ph="ph.monthlyRent" placeholder="예: 500000">
+                      <p class="hint" data-i18n="form.monthlyRentHint">월세는 위험비율 계산에 넣지 않습니다.</p>
                       <p class="preview" id="prev-monthlyRent" aria-live="polite"></p>
                       <p class="error" id="err-monthlyRent" aria-live="polite"></p>
                     </div>
@@ -218,72 +204,72 @@
                 </fieldset>
 
                 <fieldset class="field-set registry-set">
-                  <legend>등기부 요약 <span class="opt">선순위 근저당은 행 합계로 계산합니다</span></legend>
-                  <p class="hint">등기부 을구의 근저당 채권최고액을 한 줄에 하나씩 적으세요. 없으면 행을 비워 두면 0원으로 계산합니다.</p>
+                  <legend><span data-i18n="form.registry">등기부 요약</span> <span class="opt" data-i18n="form.registryOpt">선순위 근저당은 행 합계로 계산합니다</span></legend>
+                  <p class="hint" data-i18n="form.registryHint">등기부 을구의 근저당 채권최고액을 한 줄에 하나씩 적으세요. 없으면 행을 비워 두면 0원으로 계산합니다.</p>
                   <div id="reg-mortgages" class="mortgage-list"></div>
                   <p class="error" id="err-mortgages" aria-live="polite"></p>
-                  <button type="button" class="btn btn-ghost btn-sm" id="add-mortgage">+ 근저당 행 추가</button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="add-mortgage" data-i18n="app.addMortgage">근저당 행 추가</button>
                   <div class="money-grid">
                     <div class="field">
-                      <label for="f-seizureCount">압류·가압류 건수 <span class="opt">선택 · 경고만 표시</span></label>
-                      <input id="f-seizureCount" name="seizureCount" type="text" inputmode="numeric" autocomplete="off" placeholder="없으면 0">
-                      <p class="hint">계산에는 넣지 않고, 계약 전 확인할 경고로만 보여 줍니다.</p>
+                      <label for="f-seizureCount"><span data-i18n="app.seizureLabel">압류·가압류 건수</span> <span class="opt" data-i18n="form.seizureOpt">선택 · 경고만 표시</span></label>
+                      <input id="f-seizureCount" name="seizureCount" type="text" inputmode="numeric" autocomplete="off" data-i18n-ph="ph.seizure" placeholder="없으면 0">
+                      <p class="hint" data-i18n="form.seizureHint">계산에는 넣지 않고, 계약 전 확인할 경고로만 보여 줍니다.</p>
                       <p class="error" id="err-seizureCount" aria-live="polite"></p>
                     </div>
                     <div class="field field-check">
                       <input id="f-leaseRegistration" name="leaseRegistration" type="checkbox">
-                      <label for="f-leaseRegistration">임차권등기가 있어요 <span class="opt">선택</span></label>
+                      <label for="f-leaseRegistration"><span data-i18n="app.leaseRegLabel">임차권등기가 있어요</span> <span class="opt" data-i18n="form.optional">선택</span></label>
                     </div>
                   </div>
                 </fieldset>
 
                 <fieldset class="field-set">
-                  <legend>날짜 <span class="opt">선택 · 입력하면 일정이 계산됩니다</span></legend>
+                  <legend><span data-i18n="form.dates">날짜</span> <span class="opt" data-i18n="form.datesOpt">선택 · 입력하면 일정이 계산됩니다</span></legend>
                   <div class="money-grid">
                     <div class="field">
-                      <label for="f-contractDate">계약일</label>
+                      <label for="f-contractDate" data-i18n="tl.contract">계약일</label>
                       <input id="f-contractDate" name="contractDate" type="date">
                       <p class="error" id="err-contractDate" aria-live="polite"></p>
                     </div>
                     <div class="field">
-                      <label for="f-moveInDate">잔금·입주일 (전입 예정일)</label>
+                      <label for="f-moveInDate" data-i18n="form.moveIn">잔금·입주일 (전입 예정일)</label>
                       <input id="f-moveInDate" name="moveInDate" type="date">
                       <p class="error" id="err-moveInDate" aria-live="polite"></p>
                     </div>
                     <div class="field">
-                      <label for="f-expiryDate">만기일</label>
+                      <label for="f-expiryDate" data-i18n="tl.expiry">만기일</label>
                       <input id="f-expiryDate" name="expiryDate" type="date">
-                      <p class="hint">비우면 계약일 + 24개월로 추정합니다.</p>
+                      <p class="hint" data-i18n="form.expiryHint">비우면 계약일 + 24개월로 추정합니다.</p>
                       <p class="error" id="err-expiryDate" aria-live="polite"></p>
                     </div>
                   </div>
                 </fieldset>
 
                 <div class="field field-wide">
-                  <label for="f-memo">메모 <span class="opt">선택</span></label>
-                  <textarea id="f-memo" name="memo" rows="3" maxlength="520" placeholder="집주인 연락 상황, 중개사 이름 등 자유롭게"></textarea>
+                  <label for="f-memo"><span data-i18n="form.memo">메모</span> <span class="opt" data-i18n="form.optional">선택</span></label>
+                  <textarea id="f-memo" name="memo" rows="3" maxlength="520" data-i18n-ph="ph.memo" placeholder="집주인 연락 상황, 중개사 이름 등 자유롭게"></textarea>
                   <p class="error" id="err-memo" aria-live="polite"></p>
                 </div>
 
                 <div class="form-actions field-wide">
-                  <button type="submit" class="btn btn-primary">저장하고 분석하기</button>
-                  <button type="button" class="btn btn-ghost" id="cancel-btn">취소</button>
+                  <button type="submit" class="btn btn-primary" data-i18n="form.save">저장하고 분석하기</button>
+                  <button type="button" class="btn btn-ghost" id="cancel-btn" data-i18n="common.cancel">취소</button>
                 </div>
                 <p class="form-status" id="form-status" role="alert"></p>
               </form>
             </section>
 
             <!-- 분석 영역 -->
-            <section id="detail" class="detail" aria-label="선택한 물건 분석">
+            <section id="detail" class="detail" data-i18n-aria="app.detailAria" aria-label="선택한 물건 분석" hidden>
               <div class="detail-head" id="detail-head"></div>
 
-              <div class="tabs" role="tablist" aria-label="분석 메뉴" id="tabs">
-                <button type="button" role="tab" id="tab-analysis" aria-controls="panel" aria-selected="true" data-tab="analysis">위험 분석</button>
-                <button type="button" role="tab" id="tab-checklist" aria-controls="panel" aria-selected="false" tabindex="-1" data-tab="checklist">점검표</button>
-                <button type="button" role="tab" id="tab-timeline" aria-controls="panel" aria-selected="false" tabindex="-1" data-tab="timeline">날짜·일정</button>
-                <button type="button" role="tab" id="tab-clauses" aria-controls="panel" aria-selected="false" tabindex="-1" data-tab="clauses">특약 문구</button>
-                <button type="button" role="tab" id="tab-compare" aria-controls="panel" aria-selected="false" tabindex="-1" data-tab="compare">비교</button>
-                <button type="button" role="tab" id="tab-data" aria-controls="panel" aria-selected="false" tabindex="-1" data-tab="data">설정·백업</button>
+              <div class="tabs" role="tablist" data-i18n-aria="app.tabsAria" aria-label="분석 메뉴" id="tabs">
+                <button type="button" role="tab" id="tab-analysis" aria-controls="panel" aria-selected="true" data-tab="analysis" data-i18n="app.tabAnalysis">위험 분석</button>
+                <button type="button" role="tab" id="tab-checklist" aria-controls="panel" aria-selected="false" tabindex="-1" data-tab="checklist" data-i18n="app.tabChecklist">점검표</button>
+                <button type="button" role="tab" id="tab-timeline" aria-controls="panel" aria-selected="false" tabindex="-1" data-tab="timeline" data-i18n="app.tabTimeline">날짜·일정</button>
+                <button type="button" role="tab" id="tab-clauses" aria-controls="panel" aria-selected="false" tabindex="-1" data-tab="clauses" data-i18n="app.tabClauses">특약 문구</button>
+                <button type="button" role="tab" id="tab-compare" aria-controls="panel" aria-selected="false" tabindex="-1" data-tab="compare" data-i18n="app.tabCompare">비교</button>
+                <button type="button" role="tab" id="tab-data" aria-controls="panel" aria-selected="false" tabindex="-1" data-tab="data" data-i18n="app.tabData">설정·백업</button>
               </div>
 
               <div id="panel" class="panel" role="tabpanel" aria-labelledby="tab-analysis" tabindex="-1"></div>
@@ -291,33 +277,33 @@
           </div>
         </div>
 
-        <p class="disclaimer-block">이 앱의 계산은 입력값에 기반한 <strong>참고용 추정치</strong>입니다. 보장된 안전이나 법률·세무·재무 자문이 아닙니다. 등기부등본, 건축물대장, 납세 증명은 발급받아 직접 확인하고, 계약 전 공인중개사·법무사 등 전문가와 상의하세요.</p>
+        <p class="disclaimer-block" data-i18n="app.disclaimerBlock">이 앱의 계산은 입력값에 기반한 참고용 추정치입니다. 보장된 안전이나 법률·세무·재무 자문이 아닙니다. 등기부등본, 건축물대장, 납세 증명은 발급받아 직접 확인하고, 계약 전 공인중개사·법무사 등 전문가와 상의하세요.</p>
       </div>
     </section>
 
     <section class="section" aria-labelledby="faq-title">
       <div class="wrap narrow">
-        <h2 id="faq-title" class="section-title">자주 묻는 질문</h2>
+        <h2 id="faq-title" class="section-title" data-i18n="faq.title">자주 묻는 질문</h2>
         <div class="faq">
           <details>
-            <summary>깡통전세는 무엇인가요?</summary>
-            <p>집값에 비해 보증금과 앞선 빚(근저당, 선순위 임차보증금)이 거의 같거나 더 큰 전세입니다. 집이 경매로 넘어가면 낙찰가에서 앞선 빚을 먼저 갚기 때문에 보증금을 전부 돌려받지 못할 수 있습니다.</p>
+            <summary data-i18n="faq.q1">깡통전세는 무엇인가요?</summary>
+            <p data-i18n="faq.a1">집값에 비해 보증금과 앞선 빚(근저당, 선순위 임차보증금)이 거의 같거나 더 큰 전세입니다. 집이 경매로 넘어가면 낙찰가에서 앞선 빚을 먼저 갚기 때문에 보증금을 전부 돌려받지 못할 수 있습니다.</p>
           </details>
           <details>
-            <summary>위험비율은 어떻게 계산하나요?</summary>
-            <p>(선순위 근저당 채권최고액 합계 + 선순위 임차보증금 합계 + 내 보증금) ÷ 예상 매매 시세입니다. 70% 이하는 안전, 70~80% 주의, 80~90% 위험, 90% 초과는 매우 위험으로 나눕니다. 구간 값은 이 앱의 기준이며 법정 기준이 아닙니다.</p>
+            <summary data-i18n="faq.q2">위험비율은 어떻게 계산하나요?</summary>
+            <p data-i18n="faq.a2">(선순위 근저당 채권최고액 합계 + 선순위 임차보증금 합계 + 내 보증금) ÷ 예상 매매 시세입니다. 70% 이하는 안전, 70~80% 주의, 80~90% 위험, 90% 초과는 매우 위험으로 나눕니다. 구간 값은 이 앱의 기준이며 법정 기준이 아닙니다.</p>
           </details>
           <details>
-            <summary>점수가 낮으면 안전한가요?</summary>
-            <p>아닙니다. 입력한 숫자로 본 참고 지표일 뿐 보장이 아닙니다. 등기부 재확인, 임대인 체납 확인, 전세보증보험 가입 가능 여부는 별도로 확인해야 합니다.</p>
+            <summary data-i18n="faq.q3">점수가 낮으면 안전한가요?</summary>
+            <p data-i18n="faq.a3">아닙니다. 입력한 숫자로 본 참고 지표일 뿐 보장이 아닙니다. 등기부 재확인, 임대인 체납 확인, 전세보증보험 가입 가능 여부는 별도로 확인해야 합니다.</p>
           </details>
           <details>
-            <summary>입력한 데이터는 어디에 저장되나요?</summary>
-            <p>이 브라우저의 저장 공간(localStorage)에만 저장되며 서버로 보내지 않습니다. 다른 기기로 옮기려면 설정·백업 메뉴에서 JSON 파일을 내려받으세요. AI 설명 버튼을 누를 때만 숫자와 주택 유형이 Anthropic API로 전송됩니다.</p>
+            <summary data-i18n="faq.q4">입력한 데이터는 어디에 저장되나요?</summary>
+            <p data-i18n="faq.a4">이 브라우저의 저장 공간(localStorage)에만 저장되며 서버로 보내지 않습니다. 다른 기기로 옮기려면 설정·백업 메뉴에서 JSON 파일을 내려받으세요. AI 설명 버튼을 누를 때만 숫자와 주택 유형이 Anthropic API로 전송됩니다.</p>
           </details>
           <details>
-            <summary>이 앱이 법률 자문을 해 주나요?</summary>
-            <p>아니요. 날짜 계산과 체크리스트는 일반 정보입니다. 기준값(낙찰가율, 공시가격 비율, 계약갱신 기간 등)은 바뀔 수 있으니 기준일 라벨을 확인하고, 실제 계약은 전문가와 함께 검토하세요.</p>
+            <summary data-i18n="faq.q5">이 앱이 법률 자문을 해 주나요?</summary>
+            <p data-i18n="faq.a5">아니요. 날짜 계산과 체크리스트는 일반 정보입니다. 기준값(낙찰가율, 공시가격 비율, 계약갱신 기간 등)은 바뀔 수 있으니 기준일 라벨을 확인하고, 실제 계약은 전문가와 함께 검토하세요. 이 앱은 법률 자문을 하지 않으며 변호사나 공인중개사를 대신하지 않습니다.</p>
           </details>
         </div>
       </div>
@@ -328,18 +314,18 @@
     <div class="wrap footer-grid">
       <div>
         <p class="footer-brand">jeonsecheck</p>
-        <p class="muted">전세 보증금 안전 점검 도구</p>
+        <p class="muted" data-i18n="app.tagline">전세 보증금 안전 점검</p>
       </div>
       <div>
-        <p><strong>개인정보</strong></p>
-        <p class="muted">데이터는 이 브라우저에만 저장됩니다. 서버로 전송하지 않으며, AI 설명을 요청한 경우에만 숫자가 전송됩니다.</p>
+        <p class="footer-h" data-i18n="footer.privacyTitle">개인정보</p>
+        <p class="muted" data-i18n="footer.privacy">데이터는 이 브라우저에만 저장됩니다. 서버로 전송하지 않으며, AI 설명을 요청한 경우에만 숫자가 전송됩니다.</p>
       </div>
       <div>
-        <p><strong>면책</strong></p>
-        <p class="muted">계산 결과는 참고용 추정치이며 법률·세무·재무 자문이 아닙니다. 보장된 안전을 의미하지 않습니다.</p>
+        <p class="footer-h" data-i18n="footer.disclaimerTitle">면책</p>
+        <p class="muted" data-i18n="footer.disclaimer">이 앱은 법률 자문을 제공하지 않으며 변호사나 공인중개사를 대신하지 않습니다. 계산 결과는 참고용 추정치이며 법률·세무·재무 자문이 아닙니다. 보장된 안전을 의미하지 않습니다.</p>
       </div>
     </div>
-    <p class="wrap copyright">&copy; 2026 jeonsecheck. All rights reserved.</p>
+    <p class="wrap copyright">&copy; 2026 jeonsecheck</p>
   </footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>

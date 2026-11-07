@@ -1,38 +1,46 @@
 // jeonsecheck 순수 로직 모듈 (DOM 없음). 모든 계산·검증·날짜·ICS·CSV·저장 로직이 여기 있다.
 // 이 앱의 결과는 참고용 추정치이며 법률·세무·재무 자문이 아니다. 보장된 안전을 의미하지 않는다.
+// 사용자에게 보이는 문구는 모두 i18n.js 의 t()로 가져온다. 기본 언어는 ko 이다.
+
+import { t, getLang, localeTag } from './i18n.js';
+
+const AS_OF = '2026-11';
+const src = (key) => t(key, { d: AS_OF });
+const isKo = () => getLang() === 'ko';
+const fmtInt = (n) => new Intl.NumberFormat(localeTag()).format(n);
 
 /**
  * 모든 기준값은 이 객체에 모은다. 법령·수수료·시장 관행은 바뀔 수 있다.
- * 각 항목의 `기준` 문구는 화면에 그대로 노출된다. 값을 바꾸기 전에 반드시 최신 출처를 확인할 것.
+ * 출처 문구(src.*)는 화면에 그대로 노출된다. 값을 바꾸기 전에 반드시 최신 출처를 확인할 것.
  */
 export const CONSTANTS = Object.freeze({
   // 작성 시점 표기. 실제 배포 전 모든 '확인 필요' 항목을 다시 검토해야 한다.
-  기준일: '2026-11',
+  기준일: AS_OF,
   riskBands: Object.freeze([
     // maxPct 이하(경계값 포함)면 해당 구간. 70% 정확히는 '안전'.
-    Object.freeze({ maxPct: 70, label: '안전', tone: 'safe' }),
-    Object.freeze({ maxPct: 80, label: '주의', tone: 'caution' }),
-    Object.freeze({ maxPct: 90, label: '위험', tone: 'danger' }),
-    Object.freeze({ maxPct: Infinity, label: '매우 위험', tone: 'severe' }),
+    band(70, 'band.safe', 'safe'),
+    band(80, 'band.caution', 'caution'),
+    band(90, 'band.danger', 'danger'),
+    band(Infinity, 'band.severe', 'severe'),
   ]),
-  riskBandsSource: '구간 값(70·80·90%)은 이 앱의 자체 기준이다. 법정 기준이 아니며 · 확인 필요 · 기준일 2026-11',
+  get riskBandsSource() { return src('src.riskBands'); },
   scenarioDropPcts: Object.freeze([10, 20]),
-  scenarioSource: '시세 하락 시나리오(10%·20%)는 가정값이다 · 확인 필요 · 기준일 2026-11',
+  get scenarioSource() { return src('src.scenario'); },
   // 경매 낙찰가율(시세 대비 %) 가정. 사용자가 설정에서 바꿀 수 있다.
   auctionRatioPct: 80,
-  auctionRatioSource: '경매 낙찰가율 80%는 가정값이다. 지역·물건별로 크게 다르다 · 확인 필요 · 기준일 2026-11',
+  get auctionRatioSource() { return src('src.auction'); },
   // 공시가격 대비 참고 비율(%). 보증보험 가입 가능성을 대략 가늠하는 용도일 뿐이다.
   publicRatioPct: 140,
-  publicRatioSource: '공시가격 140%는 참고용 기준이다. 실제 보증보험(HUG·SGI) 가입 기준은 가입 기관에 확인 필요 · 기준일 2026-11',
+  get publicRatioSource() { return src('src.publicRatio'); },
   // 계약갱신요구권 행사 기간: 임대차 기간 만료 6개월 전 ~ 2개월 전 (주택임대차보호법 제6조의3 기준, 확인 필요).
   renewalWindow: Object.freeze({ fromMonthsBefore: 6, toMonthsBefore: 2 }),
-  renewalSource: '계약갱신요구권 행사 기간(만기 6~2개월 전)은 주택임대차보호법 제6조의3 기준 · 확인 필요 · 기준일 2026-11',
+  get renewalSource() { return src('src.renewal'); },
   // 대항력: 전입신고(주민등록) 다음 날 0시부터 (주택임대차보호법 제3조 제1항) · 확인 필요
   opposingPowerDelayDays: 1,
-  opposingPowerSource: '대항력은 전입신고를 마친 다음 날 0시부터 생긴다(주택임대차보호법 제3조 제1항) · 확인 필요 · 기준일 2026-11',
+  get opposingPowerSource() { return src('src.opposing'); },
   // 표준 임대차 기간(만기 추정용). 실제 만기는 계약서를 따른다.
   defaultTermMonths: 24,
-  defaultTermSource: '만기 미입력 시 계약일 + 24개월로 추정한다(추정치) · 기준일 2026-11',
+  get defaultTermSource() { return src('src.defaultTerm'); },
   // 입력 상한 (원). 이보다 큰 값은 오타로 보고 거부한다.
   maxWon: 1_000_000_000_000, // 1조 원
   maxMemoLength: 500,
@@ -40,20 +48,28 @@ export const CONSTANTS = Object.freeze({
   maxAddressLength: 120,
 });
 
+function band(maxPct, key, tone) {
+  return Object.freeze({ maxPct, tone, key, get label() { return t(key); } });
+}
+
+function option(value, key) {
+  return Object.freeze({ value, key, get label() { return t(key); } });
+}
+
 export const PROPERTY_TYPES = Object.freeze([
-  { value: 'apt', label: '아파트' },
-  { value: 'villa', label: '빌라·다세대' },
-  { value: 'officetel', label: '오피스텔' },
-  { value: 'house', label: '단독·다가구' },
+  option('apt', 'type.apt'),
+  option('villa', 'type.villa'),
+  option('officetel', 'type.officetel'),
+  option('house', 'type.house'),
 ]);
 
 export const LEASE_TYPES = Object.freeze([
-  { value: 'jeonse', label: '전세' },
-  { value: 'banjeonse', label: '반전세' },
+  option('jeonse', 'lease.jeonse'),
+  option('banjeonse', 'lease.banjeonse'),
 ]);
 
-const TYPE_VALUES = PROPERTY_TYPES.map((t) => t.value);
-const LEASE_VALUES = LEASE_TYPES.map((t) => t.value);
+const TYPE_VALUES = PROPERTY_TYPES.map((x) => x.value);
+const LEASE_VALUES = LEASE_TYPES.map((x) => x.value);
 
 // ---------------------------------------------------------------------------
 // 금액 파싱/포맷
@@ -67,39 +83,49 @@ export function parseWon(raw) {
   if (raw === null || raw === undefined) return { ok: true, value: null };
   const s = String(raw).trim().replace(/[,\s]/g, '');
   if (s === '') return { ok: true, value: null };
-  if (s.startsWith('-')) return { ok: false, error: '음수는 입력할 수 없어요.' };
-  if (s.includes('.')) return { ok: false, error: '원 단위 정수로 입력해주세요. (소수점 불가)' };
-  if (!/^\d+$/.test(s)) return { ok: false, error: '숫자만 입력해주세요. (예: 350000000)' };
+  if (s.startsWith('-')) return { ok: false, error: t('err.negative') };
+  if (s.includes('.')) return { ok: false, error: t('err.decimal') };
+  if (!/^\d+$/.test(s)) return { ok: false, error: t('err.digits') };
   const n = Number(s);
-  if (!Number.isSafeInteger(n)) return { ok: false, error: '값이 너무 큽니다.' };
-  if (n > CONSTANTS.maxWon) return { ok: false, error: '입력 가능한 최대 금액은 1조 원입니다.' };
+  if (!Number.isSafeInteger(n)) return { ok: false, error: t('err.tooLarge') };
+  if (n > CONSTANTS.maxWon) return { ok: false, error: t('err.maxWon') };
   return { ok: true, value: n };
 }
 
-/** 정수 원 금액을 '3억 5,000만원' 형태로 표시한다. */
+/**
+ * 정수 원 금액을 표시한다. 한국어는 '3억 5,000만원' 형태, 그 밖의 언어는 로캘에 맞는 숫자 표기와 KRW 코드를 쓴다.
+ * 함수 이름은 이전 버전과 호환을 위해 그대로 둔다.
+ */
 export function formatKoreanWon(n) {
-  if (!Number.isSafeInteger(n) || n < 0) return '-';
-  if (n === 0) return '0원';
+  if (!Number.isSafeInteger(n) || n < 0) return t('money.na');
+  if (!isKo()) return formatKrwCode(n);
+  if (n === 0) return t('money.zero');
   const eok = Math.floor(n / 1e8);
   const man = Math.floor((n % 1e8) / 1e4);
   const rest = n % 1e4;
   const parts = [];
-  if (eok) parts.push(`${eok.toLocaleString('ko-KR')}억`);
-  if (man) parts.push(`${man.toLocaleString('ko-KR')}만`);
-  if (rest) parts.push(rest.toLocaleString('ko-KR'));
-  return `${parts.join(' ')}원`;
+  if (eok) parts.push(`${fmtInt(eok)}${t('unit.eok')}`);
+  if (man) parts.push(`${fmtInt(man)}${t('unit.man')}`);
+  if (rest) parts.push(fmtInt(rest));
+  return `${parts.join(' ')}${t('unit.won')}`;
 }
 
-/** 정수 원 금액을 '350,000,000원' 형태로 표시한다. */
+function formatKrwCode(n) {
+  return new Intl.NumberFormat(localeTag(), { style: 'currency', currency: 'KRW', currencyDisplay: 'code' }).format(n);
+}
+
+/** 정수 원 금액을 '350,000,000원' 형태로 표시한다 (한국어). 다른 언어는 KRW 코드 표기. */
 export function formatWon(n) {
-  if (!Number.isSafeInteger(n)) return '-';
-  return `${n.toLocaleString('ko-KR')}원`;
+  if (!Number.isSafeInteger(n)) return t('money.na');
+  if (!isKo()) return formatKrwCode(n);
+  return `${fmtInt(n)}${t('unit.won')}`;
 }
 
 /** 비율(%)을 소수 한 자리 문자열로 표시한다. 계산은 정수 연산, 표시만 소수. */
 export function formatPct(pct) {
-  if (!Number.isFinite(pct)) return '-';
-  return `${(Math.round(pct * 10) / 10).toFixed(1)}%`;
+  if (!Number.isFinite(pct)) return t('money.na');
+  const rounded = Math.round(pct * 10) / 10;
+  return `${new Intl.NumberFormat(localeTag(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(rounded)}%`;
 }
 
 // ---------------------------------------------------------------------------
@@ -115,10 +141,10 @@ export function bandFor(total, market, dropPct = 0) {
   const T = BigInt(total);
   const M = BigInt(market);
   const D = BigInt(100 - dropPct);
-  for (const band of CONSTANTS.riskBands) {
-    if (band.maxPct === Infinity) return band;
+  for (const b of CONSTANTS.riskBands) {
+    if (b.maxPct === Infinity) return b;
     // T*100*100 <= maxPct * M * (100-d)   (양변에 100을 한 번 더 곱해 분모 제거)
-    if (T * 10000n <= BigInt(band.maxPct) * M * D) return band;
+    if (T * 10000n <= BigInt(b.maxPct) * M * D) return b;
   }
   return CONSTANTS.riskBands[CONSTANTS.riskBands.length - 1];
 }
@@ -262,7 +288,7 @@ export function daysInMonth(y, m) {
 /** 월 단위 이동. 목표 달에 날짜가 없으면 말일로 맞춘다 (1/31 + 1개월 = 2/28 또는 2/29). */
 export function addMonths(ymd, n) {
   const p = typeof ymd === 'string' ? parseYmd(ymd) : ymd;
-  if (!p) throw new RangeError('잘못된 날짜');
+  if (!p) throw new RangeError('invalid date');
   const total = p.y * 12 + (p.m - 1) + n;
   const y = Math.floor(total / 12);
   const m = (total % 12) + 1;
@@ -273,7 +299,7 @@ export function addMonths(ymd, n) {
 /** 일 단위 이동 (UTC 기준). */
 export function addDays(ymd, n) {
   const p = typeof ymd === 'string' ? parseYmd(ymd) : ymd;
-  if (!p) throw new RangeError('잘못된 날짜');
+  if (!p) throw new RangeError('invalid date');
   const dt = new Date(Date.UTC(p.y, p.m - 1, p.d + n));
   return toYmd({ y: dt.getUTCFullYear(), m: dt.getUTCMonth() + 1, d: dt.getUTCDate() });
 }
@@ -282,14 +308,19 @@ export function addDays(ymd, n) {
 export function diffDays(a, b) {
   const pa = parseYmd(a);
   const pb = parseYmd(b);
-  if (!pa || !pb) throw new RangeError('잘못된 날짜');
+  if (!pa || !pb) throw new RangeError('invalid date');
   const ms = Date.UTC(pb.y, pb.m - 1, pb.d) - Date.UTC(pa.y, pa.m - 1, pa.d);
   return Math.round(ms / 86400000);
 }
 
+/** 날짜 표시. 한국어는 '2026년 11월 7일', 그 밖의 언어는 로캘의 긴 날짜 형식(UTC 기준). */
 export function formatKoreanDate(ymd) {
   const p = parseYmd(ymd);
-  if (!p) return '-';
+  if (!p) return t('money.na');
+  if (!isKo()) {
+    return new Intl.DateTimeFormat(localeTag(), { dateStyle: 'long', timeZone: 'UTC' })
+      .format(new Date(Date.UTC(p.y, p.m - 1, p.d)));
+  }
   return `${p.y}년 ${p.m}월 ${p.d}일`;
 }
 
@@ -318,55 +349,31 @@ export function buildTimeline(p) {
   }
 
   if (contract) {
-    events.push({ key: 'contract', title: '계약일', date: contract, note: '계약서 작성 및 특약 확인', estimated: false });
+    events.push({ key: 'contract', title: t('tl.contract'), date: contract, note: t('tl.contractNote'), estimated: false });
   }
   if (moveIn) {
-    events.push({ key: 'moveIn', title: '잔금·입주일', date: moveIn, note: '입주와 같은 날 전입신고 + 확정일자', estimated: false });
+    events.push({ key: 'moveIn', title: t('tl.moveIn'), date: moveIn, note: t('tl.moveInNote'), estimated: false });
     events.push({
       key: 'opposingPower',
-      title: '대항력 발생일 (참고)',
+      title: t('tl.opposing'),
       date: addDays(moveIn, CONSTANTS.opposingPowerDelayDays),
-      note: '전입신고 다음 날 0시부터 효력. 확인 필요',
+      note: t('tl.opposingNote'),
       estimated: false,
     });
   }
   if (expiry) {
     const window = renewalWindow(expiry);
-    events.push({
-      key: 'renewalStart',
-      title: '계약갱신요구 가능 기간 시작',
-      date: window.start,
-      note: '만기 6개월 전. 확인 필요',
-      estimated,
-    });
-    events.push({
-      key: 'renewalEnd',
-      title: '계약갱신요구 가능 기간 종료',
-      date: window.end,
-      note: '만기 2개월 전. 이 날까지 행사 의사 전달 필요 (확인 필요)',
-      estimated,
-    });
+    events.push({ key: 'renewalStart', title: t('tl.renewStart'), date: window.start, note: t('tl.renewStartNote'), estimated });
+    events.push({ key: 'renewalEnd', title: t('tl.renewEnd'), date: window.end, note: t('tl.renewEndNote'), estimated });
     events.push({
       key: 'expiry',
-      title: '임대차 만기일',
+      title: t('tl.expiry'),
       date: expiry,
-      note: estimated ? '추정 만기(계약일 + 24개월). 계약서로 확인' : '보증금 반환 요구 시점은 만기 이후',
+      note: estimated ? t('tl.expiryEst') : t('tl.expiryReal'),
       estimated,
     });
-    events.push({
-      key: 'deposit',
-      title: '보증금 반환 요구 시점',
-      date: expiry,
-      note: '만기 이후 반환 요구. 집 비우기와 동시 이행을 요구',
-      estimated,
-    });
-    events.push({
-      key: 'registrar',
-      title: '임차권등기명령 검토 시점',
-      date: expiry,
-      note: '만기 후에도 보증금이 돌려받지 않으면 검토 (확인 필요)',
-      estimated,
-    });
+    events.push({ key: 'deposit', title: t('tl.deposit'), date: expiry, note: t('tl.depositNote'), estimated });
+    events.push({ key: 'registrar', title: t('tl.registrar'), date: expiry, note: t('tl.registrarNote'), estimated });
   }
   // 같은 날짜 이벤트는 입력 순서를 유지하며 날짜 오름차순 정렬
   return events
@@ -392,9 +399,9 @@ export function timelineStatus(date, today) {
 /** 'D-3', '오늘', '2일 지남' 같은 표시 문구. */
 export function dDayLabel(date, today) {
   const diff = diffDays(today, date);
-  if (diff === 0) return '오늘';
-  if (diff > 0) return `D-${diff}`;
-  return `${Math.abs(diff)}일 지남`;
+  if (diff === 0) return t('dd.today');
+  if (diff > 0) return t('dd.ahead', { n: diff });
+  return t('dd.ago', { n: Math.abs(diff) });
 }
 
 /** 오늘 이후(오늘 포함) 가장 가까운 일정. 없으면 null. events는 날짜 오름차순이어야 한다. */
@@ -472,7 +479,9 @@ export function buildIcs(events, stamp, leadDays = 1) {
   ];
   for (const ev of events) {
     const next = addDays(ev.date, 1);
-    const alarmText = lead === 1 ? `내일: ${ev.title}` : `${lead}일 뒤: ${ev.title}`;
+    const alarmText = lead === 1
+      ? t('ics.alarmTomorrow', { t: ev.title })
+      : t('ics.alarmDays', { n: lead, t: ev.title });
     lines.push(
       'BEGIN:VEVENT',
       `UID:${escapeIcsText(ev.uid)}@jeonsecheck`,
@@ -528,38 +537,38 @@ function trimmedString(raw) {
 export function validateProperty(input, prev = null) {
   const errors = {};
   const name = trimmedString(input.name);
-  if (name.length === 0) errors.name = '물건 이름을 입력해주세요.';
-  else if (name.length > CONSTANTS.maxNameLength) errors.name = `이름은 ${CONSTANTS.maxNameLength}자 이하로 입력해주세요.`;
+  if (name.length === 0) errors.name = t('v.nameRequired');
+  else if (name.length > CONSTANTS.maxNameLength) errors.name = t('v.nameMax', { n: CONSTANTS.maxNameLength });
 
   const address = trimmedString(input.address);
-  if (address.length > CONSTANTS.maxAddressLength) errors.address = `주소 메모는 ${CONSTANTS.maxAddressLength}자 이하로 입력해주세요.`;
+  if (address.length > CONSTANTS.maxAddressLength) errors.address = t('v.addressMax', { n: CONSTANTS.maxAddressLength });
 
   const memo = trimmedString(input.memo);
-  if (memo.length > CONSTANTS.maxMemoLength) errors.memo = `메모는 ${CONSTANTS.maxMemoLength}자 이하로 입력해주세요.`;
+  if (memo.length > CONSTANTS.maxMemoLength) errors.memo = t('v.memoMax', { n: CONSTANTS.maxMemoLength });
 
   const type = TYPE_VALUES.includes(input.type) ? input.type : null;
-  if (!type) errors.type = '주택 유형을 선택해주세요.';
+  if (!type) errors.type = t('v.type');
   const lease = LEASE_VALUES.includes(input.lease) ? input.lease : null;
-  if (!lease) errors.lease = '계약 형태를 선택해주세요.';
+  if (!lease) errors.lease = t('v.lease');
 
   const money = {};
   // 등기부 입력(registry)이 함께 오면 근저당 합계는 행 목록에서 계산하므로 seniorMortgage 칸은 따로 받지 않는다.
   const useRegistry = input.registry !== undefined;
   const moneyFields = [
-    ['market', '예상 매매 시세', true],
-    ['deposit', '내 보증금', true],
-    ...(useRegistry ? [] : [['seniorMortgage', '선순위 근저당 채권최고액 합계', true]]),
-    ['seniorTenant', '선순위 임차보증금 합계', true],
-    ['publicPrice', '공시가격', false],
-    ['monthlyRent', '월세', false],
+    ['market', t('f.market'), true],
+    ['deposit', t('f.deposit'), true],
+    ...(useRegistry ? [] : [['seniorMortgage', t('f.seniorMortgage'), true]]),
+    ['seniorTenant', t('f.seniorTenant'), true],
+    ['publicPrice', t('f.publicPrice'), false],
+    ['monthlyRent', t('f.monthlyRent'), false],
   ];
   for (const [key, label, required] of moneyFields) {
     const parsed = parseWon(input[key]);
     if (!parsed.ok) {
-      errors[key] = `${label}: ${parsed.error}`;
+      errors[key] = t('v.field', { label, msg: parsed.error });
       money[key] = null;
     } else if (parsed.value === null) {
-      if (required) errors[key] = `${label}을(를) 입력해주세요. 없으면 0을 입력하세요.`;
+      if (required) errors[key] = t('v.required', { label });
       money[key] = null;
     } else {
       money[key] = parsed.value;
@@ -587,11 +596,11 @@ export function validateProperty(input, prev = null) {
       dates[key] = raw;
     } else {
       dates[key] = null;
-      errors[key] = '날짜 형식이 올바르지 않아요.';
+      errors[key] = t('v.date');
     }
   }
   if (dates.contractDate && dates.expiryDate && dates.expiryDate <= dates.contractDate) {
-    errors.expiryDate = '만기일은 계약일보다 뒤여야 해요.';
+    errors.expiryDate = t('v.expiryAfter');
   }
 
   if (Object.keys(errors).length > 0) return { ok: false, value: null, errors };
@@ -635,22 +644,22 @@ export function validateRegistry(input) {
   const errors = {};
   const rows = Array.isArray(input?.mortgages) ? input.mortgages : [];
   if (rows.length > REGISTRY_LIMITS.maxMortgages) {
-    errors.mortgages = `근저당은 ${REGISTRY_LIMITS.maxMortgages}건까지 입력할 수 있어요.`;
+    errors.mortgages = t('reg.maxRows', { n: REGISTRY_LIMITS.maxMortgages });
   }
   const mortgages = [];
   rows.slice(0, REGISTRY_LIMITS.maxMortgages).forEach((raw, i) => {
-    const label = `근저당 ${i + 1}`;
+    const label = t('reg.rowLabel', { n: i + 1 });
     const parsed = parseWon(raw);
-    if (!parsed.ok) errors[`mortgage-${i}`] = `${label}: ${parsed.error}`;
-    else if (parsed.value === null || parsed.value === 0) errors[`mortgage-${i}`] = `${label}: 채권최고액을 입력하거나 이 행을 지워 주세요.`;
+    if (!parsed.ok) errors[`mortgage-${i}`] = t('v.field', { label, msg: parsed.error });
+    else if (parsed.value === null || parsed.value === 0) errors[`mortgage-${i}`] = t('reg.rowEmpty', { label });
     else mortgages.push(parsed.value);
   });
 
   const seizureRaw = trimmedString(input?.seizureCount);
   let seizureCount = 0;
   if (seizureRaw !== '') {
-    if (!/^\d+$/.test(seizureRaw)) errors.seizureCount = '압류·가압류 건수는 0 이상의 정수로 입력해주세요.';
-    else if (Number(seizureRaw) > REGISTRY_LIMITS.maxSeizures) errors.seizureCount = `${REGISTRY_LIMITS.maxSeizures}건 이하로 입력해주세요.`;
+    if (!/^\d+$/.test(seizureRaw)) errors.seizureCount = t('reg.seizureFormat');
+    else if (Number(seizureRaw) > REGISTRY_LIMITS.maxSeizures) errors.seizureCount = t('reg.seizureMax', { n: REGISTRY_LIMITS.maxSeizures });
     else seizureCount = Number(seizureRaw);
   }
 
@@ -685,18 +694,10 @@ export function summarizeRegistry(reg) {
   const r = normalizeRegistry(reg);
   const warnings = [];
   if (r.seizureCount > 0) {
-    warnings.push({
-      key: 'seizure',
-      tone: 'danger',
-      text: `등기부에 압류·가압류 ${r.seizureCount}건이 있다고 입력됐어요. 계약 전에 원인과 해제 여부를 확인하세요. (확인 필요)`,
-    });
+    warnings.push({ key: 'seizure', tone: 'danger', text: t('reg.warnSeizure', { n: r.seizureCount }) });
   }
   if (r.leaseRegistration) {
-    warnings.push({
-      key: 'leaseRegistration',
-      tone: 'caution',
-      text: '임차권등기가 있어요. 이미 나간 임차인이 보증금을 받지 못해 등기하는 경우가 많다는 일반 설명입니다. 등기 순위와 반환 상황을 확인하세요. (확인 필요)',
-    });
+    warnings.push({ key: 'leaseRegistration', tone: 'caution', text: t('reg.warnLease') });
   }
   return {
     mortgageTotal: r.mortgages.reduce((sum, v) => sum + v, 0),
@@ -712,8 +713,8 @@ export function validateSettings(input) {
   const errors = {};
   const auction = Number(input.auctionRatioPct);
   const pub = Number(input.publicRatioPct);
-  if (!Number.isInteger(auction) || auction < 1 || auction > 100) errors.auctionRatioPct = '낙찰가율은 1~100 사이 정수(%)로 입력해주세요.';
-  if (!Number.isInteger(pub) || pub < 50 || pub > 300) errors.publicRatioPct = '공시가격 비율은 50~300 사이 정수(%)로 입력해주세요.';
+  if (!Number.isInteger(auction) || auction < 1 || auction > 100) errors.auctionRatioPct = t('set.auction');
+  if (!Number.isInteger(pub) || pub < 50 || pub > 300) errors.publicRatioPct = t('set.public');
   if (Object.keys(errors).length) return { ok: false, value: null, errors };
   return { ok: true, value: { auctionRatioPct: auction, publicRatioPct: pub }, errors: {} };
 }
@@ -722,55 +723,52 @@ export function validateSettings(input) {
 // 점검표 (단계별 체크, 물건마다 저장)
 // ---------------------------------------------------------------------------
 
+const checkItem = (id) => Object.freeze({
+  id,
+  get text() { return t(`ck.${id}.text`); },
+  get hint() { return t(`ck.${id}.hint`); },
+});
+
 export const CHECKLIST = Object.freeze([
   Object.freeze({
     key: 'before',
-    title: '계약 전',
+    titleKey: 'stage.before',
+    get title() { return t('stage.before'); },
     items: Object.freeze([
-      { id: 'reg-owner', text: '등기부등본의 소유자와 임대인이 일치하는지 확인', hint: '대리인 계약이면 위임장과 인감증명서도 확인' },
-      { id: 'reg-mortgage', text: '을구의 근저당권 설정액(채권최고액) 확인', hint: '채권최고액 합계가 위험비율의 선순위 근저당 칸에 들어갑니다' },
-      { id: 'reg-seizure', text: '압류·가압류·가처분 등기가 없는지 확인', hint: '있으면 계약 전에 해결 방법을 협의' },
-      { id: 'reg-trust', text: '신탁등기 여부 확인', hint: '신탁이면 임대인이 아닌 수탁자 동의가 필요할 수 있음 (확인 필요)' },
-      { id: 'bldg-violation', text: '건축물대장에 위반건축물 표시가 없는지 확인', hint: '위반건축물이면 보증보험 가입이 어려울 수 있음 (확인 필요)' },
-      { id: 'tax-arrears', text: '임대인의 국세·지방세 체납 여부 확인', hint: '임대인에게 납세증명서 제출을 요청' },
-      { id: 'id-agent', text: '임대인 신분증 확인 (대리인이면 위임장·인감증명 포함)', hint: '실제 소유자와 대면 확인이 가장 확실' },
-      { id: 'broker-guarantee', text: '중개사 등록 여부와 중개사고 보장(공제·보증) 가입 여부 확인', hint: '공인중개사 자격과 사무소 등록 번호 확인' },
-      { id: 'insurance-check', text: '전세보증보험(HUG·SGI) 가입 가능 여부 확인', hint: '가입 기준은 기관과 시기에 따라 다름 (확인 필요)' },
+      checkItem('reg-owner'),
+      checkItem('reg-mortgage'),
+      checkItem('reg-seizure'),
+      checkItem('reg-trust'),
+      checkItem('bldg-violation'),
+      checkItem('tax-arrears'),
+      checkItem('id-agent'),
+      checkItem('broker-guarantee'),
+      checkItem('insurance-check'),
     ]),
   }),
   Object.freeze({
     key: 'contract',
-    title: '계약 시',
-    items: Object.freeze([
-      { id: 'special-clause', text: '특약 문구를 계약서에 넣기', hint: '특약 문구 탭의 예시를 참고 (법률 자문 아님)' },
-      { id: 'deposit-account', text: '보증금은 임대인 본인 명의 계좌로 이체하고 영수증 보관', hint: '현금 지급이나 제3자 계좌 이체는 피하기' },
-    ]),
+    titleKey: 'stage.contract',
+    get title() { return t('stage.contract'); },
+    items: Object.freeze([checkItem('special-clause'), checkItem('deposit-account')]),
   }),
   Object.freeze({
     key: 'move',
-    title: '잔금·입주',
-    items: Object.freeze([
-      { id: 'same-day-move', text: '잔금일 같은 날 전입신고 + 확정일자 받기', hint: '전입과 확정일자를 같은 날 처리하면 순위 관리가 쉬움' },
-      { id: 'opposing-power', text: '대항력은 전입신고 다음 날 0시부터 생긴다는 점 확인', hint: '일정 탭의 대항력 발생일 참고 (확인 필요)' },
-      { id: 'reg-recheck', text: '잔금 지급 전에 등기부를 다시 떼어 새 근저당·압류가 없는지 확인', hint: '계약 후 새 권리가 설정되면 계약 해제 등을 검토' },
-    ]),
+    titleKey: 'stage.move',
+    get title() { return t('stage.move'); },
+    items: Object.freeze([checkItem('same-day-move'), checkItem('opposing-power'), checkItem('reg-recheck')]),
   }),
   Object.freeze({
     key: 'living',
-    title: '거주 중',
-    items: Object.freeze([
-      { id: 'renewal-window', text: '계약갱신요구권 행사 기간(만기 6~2개월 전)을 캘린더에 등록', hint: '일정 탭에서 .ics 파일로 내보내기' },
-      { id: 'keep-address', text: '이사하지 않는 동안 주민등록(전입)을 유지', hint: '전입이 빠지면 대항력이 끊길 수 있음' },
-    ]),
+    titleKey: 'stage.living',
+    get title() { return t('stage.living'); },
+    items: Object.freeze([checkItem('renewal-window'), checkItem('keep-address')]),
   }),
   Object.freeze({
     key: 'move-out',
-    title: '퇴거',
-    items: Object.freeze([
-      { id: 'return-order', text: '보증금 반환과 집 비우기·열쇠 전달을 동시에 하기', hint: '반환 전에 먼저 집을 비우지 않기' },
-      { id: 'registrar', text: '보증금이 돌아오지 않으면 임차권등기명령 신청을 검토', hint: '등기 후에는 이사해도 대항력·우선변제권 유지 (확인 필요)' },
-      { id: 'deposit-check', text: '퇴거 후 등기부에서 내 전입 말소와 새 권리 여부 확인', hint: '' },
-    ]),
+    titleKey: 'stage.moveOut',
+    get title() { return t('stage.moveOut'); },
+    items: Object.freeze([checkItem('return-order'), checkItem('registrar'), checkItem('deposit-check')]),
   }),
 ]);
 
@@ -807,62 +805,24 @@ export function overallProgress(checks) {
 // 특약 문구 라이브러리 (참고 예시. 법률 자문이 아니며 실제 계약 전 전문가 확인 권장)
 // ---------------------------------------------------------------------------
 
+const clause = (id) => Object.freeze({
+  id,
+  get title() { return t(`cl.${id}.title`); },
+  get text() { return t(`cl.${id}.text`); },
+});
+
 export const CLAUSES = Object.freeze([
-  {
-    id: 'no-new-rights',
-    title: '잔금일까지 권리변동 없음',
-    text: '임대인은 잔금 지급일까지 본 주택에 근저당권, 전세권, 가압류, 압류 등 새로운 권리가 설정되지 않도록 한다.',
-  },
-  {
-    id: 'mortgage-cancel',
-    title: '근저당 설정 시 계약 해제 및 즉시 반환',
-    text: '잔금 지급 전후를 불문하고 본 주택에 근저당권 등 새로운 권리가 설정된 경우 임차인은 본 계약을 해제할 수 있으며, 임대인은 지급받은 보증금 전액을 즉시 반환한다.',
-  },
-  {
-    id: 'tax-clear',
-    title: '국세·지방세 체납 없음 확인',
-    text: '임대인은 계약 체결 시점에 국세 및 지방세 체납이 없음을 증명하는 자료를 제시하며, 사실과 다를 경우 임차인은 본 계약을 해제할 수 있다.',
-  },
-  {
-    id: 'prior-disclosure',
-    title: '선순위 권리 현황 고지',
-    text: '임대인은 본 주택의 선순위 근저당권 및 선순위 임차보증금 현황을 확인서로 고지하며, 고지 내용이 사실과 다를 경우 임차인은 본 계약을 해제할 수 있다.',
-  },
-  {
-    id: 'guarantee-cooperation',
-    title: '전세보증보험 가입 협조',
-    text: '임대인은 임차인이 전세보증금반환보증에 가입하는 데 필요한 서류 제출과 절차에 협조한다.',
-  },
-  {
-    id: 'repair-scope',
-    title: '입주 전 시설 점검·수리 범위',
-    text: '임대인은 입주 전 누수, 보일러, 창호 등 주요 시설을 점검하여 수리하며, 수리 범위와 기한은 별지에 따른다.',
-  },
-  {
-    id: 'renewal-terms',
-    title: '계약갱신 조건 명시',
-    text: '임차인이 주택임대차보호법상 계약갱신요구권을 행사하는 경우 임대인은 정당한 사유 없이 이를 거절하지 않으며, 갱신 시 보증금 증액 한도는 법령을 따른다.',
-  },
-  {
-    id: 'simultaneous-return',
-    title: '보증금 반환과 집 비우기 동시 이행',
-    text: '임대인이 보증금을 반환하는 것과 임차인이 주택을 비우고 열쇠를 넘기는 것은 동시에 이행한다. 어느 한쪽을 먼저 요구하지 않는다.',
-  },
-  {
-    id: 'deposit-account-owner',
-    title: '보증금 이체 계좌는 임대인 명의',
-    text: '임차인은 보증금을 임대인 본인 명의의 계좌로만 이체하며, 이체 내역과 영수증을 보관한다. 제3자 명의 계좌로는 이체하지 않는다.',
-  },
-  {
-    id: 'confirm-date-cooperation',
-    title: '전입·확정일자 절차 협조',
-    text: '임대인은 잔금 지급일에 임차인이 전입신고와 확정일자 부여를 받을 수 있도록 필요한 서류와 절차에 협조한다.',
-  },
-  {
-    id: 'broker-disclosure',
-    title: '중개대상물 확인·설명 교부 확인',
-    text: '중개사는 계약 전에 등기사항증명서와 건축물대장 등 중개대상물 확인·설명 내용을 임차인에게 교부하고 설명했음을 확인한다.',
-  },
+  clause('no-new-rights'),
+  clause('mortgage-cancel'),
+  clause('tax-clear'),
+  clause('prior-disclosure'),
+  clause('guarantee-cooperation'),
+  clause('repair-scope'),
+  clause('renewal-terms'),
+  clause('simultaneous-return'),
+  clause('deposit-account-owner'),
+  clause('confirm-date-cooperation'),
+  clause('broker-disclosure'),
 ]);
 
 /**
@@ -875,7 +835,9 @@ export function composeClauses(ids) {
   return picked.map((c, i) => `${i + 1}. ${c.title}\n${c.text}`).join('\n\n');
 }
 
-export const CLAUSE_NOTICE = '참고 예시입니다. 법률 자문이 아니며, 실제 계약에는 상황에 맞게 전문가(공인중개사·법무사·변호사)와 함께 검토하세요.';
+export function clauseNotice() {
+  return t('clauseNotice');
+}
 
 // ---------------------------------------------------------------------------
 // 저장 · 백업
@@ -1001,10 +963,10 @@ export function parseBackup(text) {
   try {
     obj = JSON.parse(text);
   } catch {
-    return { ok: false, error: 'JSON 형식이 아니에요.' };
+    return { ok: false, error: t('backup.notJson') };
   }
   if (!obj || obj.app !== BACKUP_APP || obj.version !== BACKUP_VERSION || !obj.data) {
-    return { ok: false, error: 'jeonsecheck 백업 파일이 아니거나 버전이 맞지 않아요.' };
+    return { ok: false, error: t('backup.wrong') };
   }
   const data = normalizeData(obj.data);
   return { ok: true, data };
@@ -1019,13 +981,20 @@ export function makeId(random = Math.random, now = Date.now()) {
 // 물건 요약 CSV 행
 // ---------------------------------------------------------------------------
 
+export function summaryHeaders() {
+  return [
+    t('csv.name'), t('csv.type'), t('csv.lease'), t('csv.market'), t('csv.deposit'),
+    t('csv.seniorMortgage'), t('csv.seniorTenant'), t('csv.ratio'), t('csv.band'), t('csv.expiry'),
+  ];
+}
+
 export function summaryRows(properties, settings) {
   return properties.map((p) => {
     const a = analyzeProperty(p, settings);
     return [
       p.name,
-      PROPERTY_TYPES.find((t) => t.value === p.type)?.label ?? '',
-      LEASE_TYPES.find((t) => t.value === p.lease)?.label ?? '',
+      PROPERTY_TYPES.find((x) => x.value === p.type)?.label ?? '',
+      LEASE_TYPES.find((x) => x.value === p.lease)?.label ?? '',
       p.market ?? '',
       p.deposit ?? '',
       p.seniorMortgage ?? '',
@@ -1036,8 +1005,6 @@ export function summaryRows(properties, settings) {
     ];
   });
 }
-
-export const SUMMARY_HEADERS = ['이름', '주택 유형', '계약 형태', '예상 매매 시세(원)', '내 보증금(원)', '선순위 근저당 합계(원)', '선순위 임차보증금 합계(원)', '위험비율(%)', '등급(참고)', '만기일'];
 
 // ---------------------------------------------------------------------------
 // 비교 순위 (참고). "가장 안전하다"는 판단이 아니라 입력값 기준 위험비율의 순서일 뿐이다.
@@ -1077,12 +1044,12 @@ export function rankSafest(items) {
 }
 
 // ---------------------------------------------------------------------------
-// 인쇄용 점검표 모델. 화면과 같은 체크 상태를 ☐/☑ 표시로 바꾼 구조만 만든다.
+// 분석 화면의 숫자 설명. 기준·가정 값에는 항상 '확인 필요'를 붙인다.
+// basis: 'input' | 'calc' | 'assume' | 'ref'  (표시는 t('basis.' + basis))
 // ---------------------------------------------------------------------------
 
 /**
  * 분석 화면의 숫자마다 "무엇을 뜻하는지, 어디서 나왔는지"를 적는다.
- * basis: '입력값' | '계산 규칙' | '가정' | '참고 기준'. 기준·가정 값에는 항상 '확인 필요'를 붙인다.
  * 분석이 계산 불가면 빈 배열.
  */
 export function explainRiskNumbers(a) {
@@ -1090,74 +1057,76 @@ export function explainRiskNumbers(a) {
   const items = [];
   items.push({
     key: 'ratio',
-    label: '위험비율',
+    label: t('ex.ratio.label'),
     value: formatPct(a.ratioPct),
-    formula: '(선순위 근저당 + 선순위 임차보증금 + 내 보증금) ÷ 예상 매매 시세',
-    meaning: '내 보증금이 포함된 청구 합계가 예상 시세의 몇 %인지 보여 줍니다. 값이 클수록 시세 대비 앞선 채권이 많다는 뜻입니다.',
-    basis: '계산 규칙',
-    note: '시세는 추정치입니다. 실제 거래가와 다를 수 있어요.',
+    formula: t('ex.ratio.formula'),
+    meaning: t('ex.ratio.meaning'),
+    basis: 'calc',
+    note: t('ex.ratio.note'),
   });
   items.push({
     key: 'band',
-    label: '등급',
+    label: t('ex.band.label'),
     value: a.band.label,
-    formula: '70% 이하 안전 · 80% 이하 주의 · 90% 이하 위험 · 90% 초과 매우 위험',
-    meaning: '위험비율을 이 앱이 정한 네 구간에 넣은 결과입니다.',
-    basis: '참고 기준',
-    note: `${CONSTANTS.riskBandsSource}`,
+    formula: t('risk.bandRule'),
+    meaning: t('ex.band.meaning'),
+    basis: 'ref',
+    note: CONSTANTS.riskBandsSource,
   });
   a.scenarios.forEach((s) => {
     items.push({
       key: `drop${s.dropPct}`,
-      label: `시세 ${s.dropPct}% 하락 시 비율`,
-      value: s.ratioPct === null ? '계산 불가' : formatPct(s.ratioPct),
-      formula: `청구 합계 ÷ (시세 × ${100 - s.dropPct}%)`,
-      meaning: `시세가 ${s.dropPct}% 떨어졌다고 가정했을 때의 위험비율입니다. 실제로 떨어진다는 예측이 아닙니다.`,
-      basis: '가정',
+      label: t('ex.drop.label', { d: s.dropPct }),
+      value: s.ratioPct === null ? t('common.notCalc') : formatPct(s.ratioPct),
+      formula: t('ex.drop.formula', { r: 100 - s.dropPct }),
+      meaning: t('ex.drop.meaning', { d: s.dropPct }),
+      basis: 'assume',
       note: CONSTANTS.scenarioSource,
     });
   });
   items.push({
     key: 'auctionPrice',
-    label: '가정 낙찰가',
+    label: t('ex.auction.label'),
     value: formatKoreanWon(a.auction.auctionPrice),
-    formula: `예상 시세 × 낙찰가율 ${a.auction.auctionPct}%`,
-    meaning: '경매로 나왔을 때 가정한 낙찰 금액입니다. 실제 낙찰가율은 지역·물건마다 크게 다릅니다.',
-    basis: '가정',
+    formula: t('ex.auction.formula', { p: a.auction.auctionPct }),
+    meaning: t('ex.auction.meaning'),
+    basis: 'assume',
     note: CONSTANTS.auctionRatioSource,
   });
   items.push({
     key: 'distributable',
-    label: '배당 가능액',
+    label: t('ex.dist.label'),
     value: formatKoreanWon(a.auction.distributable),
-    formula: '가정 낙찰가 − 선순위 근저당 − 선순위 임차보증금 (0 미만이면 0)',
-    meaning: '선순위 채권을 먼저 갚고 남는 금액입니다. 이 금액 안에서 내 보증금을 나눠 받는다고 단순화했습니다.',
-    basis: '계산 규칙',
-    note: '경매비용, 최우선변제 소액보증금, 확정일자 순서는 반영하지 않았어요. (단순 모델, 확인 필요)',
+    formula: t('ex.dist.formula'),
+    meaning: t('ex.dist.meaning'),
+    basis: 'calc',
+    note: t('ex.dist.note'),
   });
   items.push({
     key: 'exposed',
-    label: '배당 못 받을 수 있는 금액',
+    label: t('ex.exposed.label'),
     value: formatKoreanWon(a.auction.exposed),
-    formula: '내 보증금 − min(내 보증금, 배당 가능액)',
-    meaning: '가정한 경매에서 보증금 중 배당받지 못할 수 있는 몫입니다. 0원이면 가정 범위 안에서는 전액 배당 대상입니다.',
-    basis: '계산 규칙',
-    note: '단순 모델의 결과입니다. 실제 배당표와 다를 수 있어요.',
+    formula: t('ex.exposed.formula'),
+    meaning: t('ex.exposed.meaning'),
+    basis: 'calc',
+    note: t('ex.exposed.note'),
   });
   const prot = a.protection;
   items.push({
     key: 'publicLimit',
-    label: '공시가격 기준 한도',
-    value: prot.status === 'unknown' ? '공시가격 미입력' : formatKoreanWon(prot.limit),
-    formula: `공시가격 × ${prot.publicPct}%`,
-    meaning: '청구 합계와 비교하는 참고 한도입니다. 이 한도를 넘지 않는다고 보증보험에 가입할 수 있다는 뜻은 아닙니다.',
-    basis: '참고 기준',
-    note: `${CONSTANTS.publicRatioSource}. 실제 가입 기준은 가입 기관에 확인 필요`,
+    label: t('ex.pub.label'),
+    value: prot.status === 'unknown' ? t('ex.pub.unknown') : formatKoreanWon(prot.limit),
+    formula: t('ex.pub.formula', { p: prot.publicPct }),
+    meaning: t('ex.pub.meaning'),
+    basis: 'ref',
+    note: t('ex.pub.note', { src: CONSTANTS.publicRatioSource }),
   });
   return items;
 }
 
-export const PRINT_NOTICE ='이 목록은 계약 확인을 돕는 참고 체크리스트입니다. 등기부·건축물대장·납세 증명 등 원본 서류를 대신하지 않으며 법률 자문이 아닙니다. 기준값은 확인 필요 항목입니다.';
+export function printNotice() {
+  return t('printNotice');
+}
 
 /**
  * p: 저장된 물건, analysis: analyzeProperty 결과(없어도 됨), today: 'YYYY-MM-DD'.
@@ -1181,18 +1150,21 @@ export function checklistPrintModel(p, today, analysis = null) {
       })),
     };
   });
-  const typeLabel = PROPERTY_TYPES.find((t) => t.value === p.type)?.label ?? '';
-  const leaseLabel = LEASE_TYPES.find((t) => t.value === p.lease)?.label ?? '';
+  const typeLabel = PROPERTY_TYPES.find((x) => x.value === p.type)?.label ?? '';
+  const leaseLabel = LEASE_TYPES.find((x) => x.value === p.lease)?.label ?? '';
   const risk = analysis?.ok
-    ? [`위험비율 ${formatPct(analysis.ratioPct)} (${analysis.band.label}, 참고)`, `기준일 ${CONSTANTS.기준일} · 확인 필요`]
+    ? [
+      t('print.riskLine', { r: formatPct(analysis.ratioPct), b: analysis.band.label }),
+      t('print.asOfLine', { d: CONSTANTS.기준일 }),
+    ]
     : [];
   return {
-    title: `${p.name} · 전세 계약 점검표`,
+    title: t('print.title', { name: p.name }),
     meta: [typeLabel, leaseLabel].filter(Boolean).join(' · '),
     printedOn: today,
     risk,
     overall: overallProgress(checks),
     stages,
-    notice: PRINT_NOTICE,
+    notice: printNotice(),
   };
 }

@@ -5,7 +5,7 @@ import {
   summarizeRegistry, defaultRegistry, REGISTRY_LIMITS, normalizeData, buildBackup, parseBackup, defaultData,
   formatPct, formatKoreanWon,
   timelineStatus, dDayLabel, nextEvent, reminderFor, buildIcs, buildTimeline, REMINDER_LEAD_DAYS,
-  CLAUSES, composeClauses, compareRatio, rankSafest, analyzeProperty, checklistPrintModel, CHECKLIST, PRINT_NOTICE, explainRiskNumbers,
+  CLAUSES, composeClauses, compareRatio, rankSafest, analyzeProperty, checklistPrintModel, CHECKLIST, printNotice, explainRiskNumbers,
 } from '../logic.js';
 
 const goodBase = {
@@ -294,8 +294,8 @@ describe('인쇄용 점검표 모델', () => {
     assert.deepEqual(none.risk, []);
   });
   test('안내문은 법률 자문이 아님을 밝힌다', () => {
-    assert.equal(model.notice, PRINT_NOTICE);
-    assert.ok(PRINT_NOTICE.includes('법률 자문이 아닙니다'));
+    assert.equal(model.notice, printNotice());
+    assert.ok(printNotice().includes('법률 자문이 아닙니다'));
   });
 });
 
@@ -307,11 +307,11 @@ describe('위험 숫자 설명', () => {
     assert.ok(items.length >= 8);
     for (const it of items) {
       assert.ok(it.label && it.value && it.formula && it.meaning && it.note, it.key);
-      assert.ok(['입력값', '계산 규칙', '가정', '참고 기준'].includes(it.basis) || it.basis === '계산 규칙', it.key);
+      assert.ok(['input', 'calc', 'assume', 'ref'].includes(it.basis), it.key);
     }
   });
   test('기준과 가정 항목에는 확인 필요 표시가 있다', () => {
-    for (const it of items.filter((x) => x.basis === '가정' || x.basis === '참고 기준')) {
+    for (const it of items.filter((x) => x.basis === 'assume' || x.basis === 'ref')) {
       assert.ok(it.note.includes('확인 필요'), it.key);
     }
   });
@@ -329,7 +329,7 @@ describe('위험 숫자 설명', () => {
   });
   test('시세 10% 하락은 예측이 아니라 가정이라고 적는다', () => {
     const drop = items.find((x) => x.key === 'drop10');
-    assert.equal(drop.basis, '가정');
+    assert.equal(drop.basis, 'assume');
     assert.ok(drop.meaning.includes('실제로 떨어진다는 예측이 아닙니다'));
   });
 });

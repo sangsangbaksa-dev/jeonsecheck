@@ -37,11 +37,11 @@ describe('AI 전송 데이터 최소화', () => {
   });
   test('숫자, 주택 유형, 계약 형태, 등급은 포함', () => {
     const payload = buildAdvicePayload(prop, analysis);
-    assert.equal(payload.payload.주택유형, '빌라·다세대');
-    assert.equal(payload.payload.계약형태, '전세');
-    assert.equal(payload.payload.예상매매시세_원, 300000000);
-    assert.equal(payload.payload.위험비율_퍼센트, 86.7);
-    assert.equal(payload.payload.등급, '위험');
+    assert.equal(payload.payload.housing_type, '빌라·다세대');
+    assert.equal(payload.payload.lease_type, '전세');
+    assert.equal(payload.payload.market_price_krw, 300000000);
+    assert.equal(payload.payload.risk_ratio_pct, 86.7);
+    assert.equal(payload.payload.band, '위험');
   });
   test('계산 불가 물건은 payload를 만들지 않는다', () => {
     const bad = analyzeProperty({ ...prop, market: 0 });
